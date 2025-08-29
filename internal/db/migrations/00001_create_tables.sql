@@ -21,7 +21,7 @@ CREATE TABLE
 CREATE TABLE
     tasks (
         id UUID PRIMARY KEY,
-        subtask_id VARCHAR REFERENCES tasks (id),
+        parent_task_id UUID REFERENCES tasks (id),
         owner_id UUID REFERENCES users (id),
         created_at TIMESTAMPTZ DEFAULT now (),
         updated_at TIMESTAMPTZ,
