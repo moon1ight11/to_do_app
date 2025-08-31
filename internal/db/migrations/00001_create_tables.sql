@@ -1,7 +1,10 @@
 -- +goose Up
 -- +goose StatementBegin
+
+CREATE SCHEMA IF NOT EXISTS todo_app;
+
 CREATE TABLE
-    users (
+    todo_app.users (
         id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         created_at  TIMESTAMPTZ DEFAULT now(),
         updated_at  TIMESTAMPTZ,
@@ -12,18 +15,17 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    settings (
-        user_id             UUID PRIMARY KEY,
+    todo_app.settings (
+        user_id             UUID PRIMARY KEY REFERENCES users(id),
         default_tz          VARCHAR,
-        default_duration    TIME,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        default_duration    INTERVAL
     );
 
 CREATE TABLE
-    tasks (
+    todo_app.tasks (
         id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        parent_task_id  UUID,
-        owner_id        UUID,
+        parent_task_id  UUID REFERENCES tasks(id),
+        owner_id        UUID REFERENCES users(id),
         created_at      TIMESTAMPTZ DEFAULT now(),
         updated_at      TIMESTAMPTZ,
         deleted_at      TIMESTAMPTZ,
@@ -31,15 +33,14 @@ CREATE TABLE
         end_at          TIMESTAMPTZ,
         completed_at    TIMESTAMPTZ,
         title           VARCHAR,
-        description     VARCHAR,
-        FOREIGN KEY (parent_task_id) REFERENCES tasks(id),
-        FOREIGN KEY (owner_id) REFERENCES users(id)
+        description     VARCHAR
     );
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE tasks;
-DROP TABLE settings;
-DROP TABLE users;
+DROP TABLE todo_app.tasks;
+DROP TABLE todo_app.settings;
+DROP TABLE todo_app.users;
+DROP SCHEMA todo_app;
 -- +goose StatementEnd
