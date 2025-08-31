@@ -13,6 +13,7 @@ CREATE TABLE
         email       VARCHAR NOT NULL UNIQUE,
         pass        VARCHAR NOT NULL
     );
+CREATE INDEX todo_app.idx_users_deleted ON todo_app.users(deleted_at);
 
 CREATE TABLE
     todo_app.settings (
@@ -20,6 +21,7 @@ CREATE TABLE
         default_tz          VARCHAR,
         default_duration    INTERVAL
     );
+CREATE INDEX todo_app.idx_settings_default_tz ON todo_app.settings(default_tz);
 
 CREATE TABLE
     todo_app.tasks (
@@ -35,6 +37,8 @@ CREATE TABLE
         title           VARCHAR,
         description     VARCHAR
     );
+CREATE INDEX todo_app.idx_tasks_deleted ON todo_app.tasks(deleted_at);
+CREATE INDEX todo_app.idx_tasks_owner_id ON todo_app.tasks(owner_id);
 -- +goose StatementEnd
 
 -- +goose Down
