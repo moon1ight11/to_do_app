@@ -1,6 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-
 CREATE SCHEMA IF NOT EXISTS todo_app;
 
 CREATE TABLE
@@ -8,12 +7,12 @@ CREATE TABLE
         id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         created_at  TIMESTAMPTZ DEFAULT now(),
         updated_at  TIMESTAMPTZ,
-        deleted_at  TIMESTAMPTZ,
         name        VARCHAR NOT NULL UNIQUE,
         email       VARCHAR NOT NULL UNIQUE,
         pass        VARCHAR NOT NULL
     );
-CREATE INDEX todo_app.idx_users_deleted ON todo_app.users(deleted_at);
+CREATE INDEX todo_app.idx_users_name ON todo_app.users(name);
+CREATE INDEX todo_app.idx_users_email ON todo_app.users(email);
 
 CREATE TABLE
     todo_app.settings (
@@ -21,7 +20,6 @@ CREATE TABLE
         default_tz          VARCHAR,
         default_duration    INTERVAL
     );
-CREATE INDEX todo_app.idx_settings_default_tz ON todo_app.settings(default_tz);
 
 CREATE TABLE
     todo_app.tasks (
@@ -30,15 +28,14 @@ CREATE TABLE
         owner_id        UUID REFERENCES users(id),
         created_at      TIMESTAMPTZ DEFAULT now(),
         updated_at      TIMESTAMPTZ,
-        deleted_at      TIMESTAMPTZ,
         start_at        TIMESTAMPTZ,
         end_at          TIMESTAMPTZ,
         completed_at    TIMESTAMPTZ,
         title           VARCHAR,
         description     VARCHAR
     );
-CREATE INDEX todo_app.idx_tasks_deleted ON todo_app.tasks(deleted_at);
 CREATE INDEX todo_app.idx_tasks_owner_id ON todo_app.tasks(owner_id);
+CREATE INDEX todo_app.idx_tasks_completed_at ON todo_app.tasks(completed_at NOT NULL);
 -- +goose StatementEnd
 
 -- +goose Down
