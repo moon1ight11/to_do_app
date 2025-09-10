@@ -63,3 +63,4 @@ func setDefaults() {
 	
 	viper.SetDefault("jwt.expiration", "24h")
 }
+// потом load будет вызываться в main.go
