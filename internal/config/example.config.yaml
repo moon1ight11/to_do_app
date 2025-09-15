@@ -1,0 +1,16 @@
+environment: "development"
+
+server:
+  port: 8080
+  host: "localhost"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "todo_app"
+  user: "fedor"
+  password: "fedor_pass"
+
+jwt:
+  secret: "1129qwerty!2911"
+  expiration: "24h"
