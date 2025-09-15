@@ -2,22 +2,24 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/pressly/goose/v3"
 	"log"
+	"todoapp/internal/config"
 )
 
 type App struct {
-	DBex *DateBase
+	DBex *DataBase
 }
 
-type DateBase struct {
+type DataBase struct {
 	DB            *sql.DB
 	MigrationsDir string
 }
 
 // экземпляр DB
-func NewDataBase(db *sql.DB, migrationsDir string) *DateBase {
-	datebase := DateBase{
+func NewDataBase(db *sql.DB, migrationsDir string) *DataBase {
+	datebase := DataBase{
 		DB:            db,
 		MigrationsDir: migrationsDir,
 	}
@@ -26,7 +28,7 @@ func NewDataBase(db *sql.DB, migrationsDir string) *DateBase {
 }
 
 // метод DB для применения миграций
-func (d *DateBase) UppingMigrations() error {
+func (d *DataBase) UppingMigrations() error {
 	goose.SetBaseFS(nil)
 	if err := goose.SetDialect("postgres"); err != nil {
 		log.Printf("Failed to set dialect: %v", err)
@@ -44,8 +46,15 @@ func (d *DateBase) UppingMigrations() error {
 }
 
 // соединение с DB
-func DBConnection() (*sql.DB, error) {
-	connStr := "host=localhost port=5432 user=fedor password=fedor_pass dbname=todo_app sslmode=disable"
+func DBConnection(cfg *config.Config) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s migratioinsDir=%s",
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Name,
+		cfg.Database.MigrationsDir,
+	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

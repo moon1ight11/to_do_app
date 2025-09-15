@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 	"github.com/spf13/viper"
-	"time"
 	"log"
+	"time"
 )
 
 type Config struct {
@@ -20,11 +20,12 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host            string        `mapstructure:"host"`
-	Port            int           `mapstructure:"port"`
-	Name            string        `mapstructure:"name"`
-	User            string        `mapstructure:"user"`
-	Password        string        `mapstructure:"password"`
+	Host          string `mapstructure:"host"`
+	Port          int    `mapstructure:"port"`
+	Name          string `mapstructure:"name"`
+	User          string `mapstructure:"user"`
+	Password      string `mapstructure:"password"`
+	MigrationsDir string `mapstructure:"migrationsDir"`
 }
 
 type JWTConfig struct {
@@ -55,12 +56,12 @@ func Load() (*Config, error) {
 
 func setDefaults() {
 	viper.SetDefault("environment", "development")
-	
+
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.host", "localhost")
-	
+
 	viper.SetDefault("database.port", 5432)
-	
+	viper.SetDefault("database.migrationsDir", "./migrations")
+
 	viper.SetDefault("jwt.expiration", "24h")
 }
-// потом load будет вызываться в main.go

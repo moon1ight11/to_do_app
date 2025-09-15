@@ -2,18 +2,25 @@ package main
 
 import (
 	"log"
+	"todoapp/internal/config"
 	"todoapp/internal/db"
 )
 
 func main() {
-	// подключение к db
-	datebase, err := db.DBConnection()
+	// инициализация конфигурации
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to connecntion to DB:", err)
+		log.Fatal("Failed to load config", err)
+	}
+
+	// подключение к db
+	database, err := db.DBConnection(cfg)
+	if err != nil {
+		log.Fatal("Failed to connecntion DB:", err)
 	}
 
 	// создание экземпляра db
-	db := db.NewDataBase(datebase, "./migrations")
+	db := db.NewDataBase(database, cfg.Database.MigrationsDir)
 
 	// применение миграций
 	err = db.UppingMigrations()

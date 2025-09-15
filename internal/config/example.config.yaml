@@ -10,6 +10,7 @@ database:
   name: "todo_app"
   user: "fedor"
   password: "fedor_pass"
+  migrationsDir: "./migrations"
 
 jwt:
   secret: "1129qwerty!2911"
