@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"todoapp/internal/config"
-	"todoapp/internal/db"
+	"todoapp/internal/storage"
 )
 
 func main() {
@@ -13,17 +13,14 @@ func main() {
 		log.Fatal("Failed to load config", err)
 	}
 
-	// подключение к db
-	database, err := db.DBConnection(cfg)
+	// соединение с БД
+	db, err := storage.NewStorage(cfg)
 	if err != nil {
-		log.Fatal("Failed to connecntion DB:", err)
+		log.Fatal("Failed to connect DB")
 	}
 
-	// создание экземпляра db
-	db := db.NewDataBase(database, cfg.Database.MigrationsDir)
-
 	// применение миграций
-	err = db.UppingMigrations()
+	err = db.UpMigrations()
 	if err != nil {
 		log.Fatal("Failed to upping migrations", err)
 	}

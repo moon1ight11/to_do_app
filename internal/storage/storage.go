@@ -1,4 +1,4 @@
-package db
+package storage
 
 import (
 	"database/sql"
@@ -8,27 +8,8 @@ import (
 	"todoapp/internal/config"
 )
 
-type App struct {
-	DBex *DataBase
-}
-
-type DataBase struct {
-	DB            *sql.DB
-	MigrationsDir string
-}
-
-// экземпляр DB
-func NewDataBase(db *sql.DB, migrationsDir string) *DataBase {
-	datebase := DataBase{
-		DB:            db,
-		MigrationsDir: migrationsDir,
-	}
-
-	return &datebase
-}
-
 // метод DB для применения миграций
-func (d *DataBase) UppingMigrations() error {
+func (d *DataBase) UpMigrations() error {
 	goose.SetBaseFS(nil)
 	if err := goose.SetDialect("postgres"); err != nil {
 		log.Printf("Failed to set dialect: %v", err)
@@ -45,8 +26,8 @@ func (d *DataBase) UppingMigrations() error {
 	return nil
 }
 
-// соединение с DB
-func DBConnection(cfg *config.Config) (*sql.DB, error) {
+// соединение с DB и return экземпляра
+func NewStorage(cfg *config.Config) (*DataBase, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s migratioinsDir=%s",
 		cfg.Database.Host,
 		cfg.Database.Port,
@@ -69,6 +50,12 @@ func DBConnection(cfg *config.Config) (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Println("Successfully connected to DB")
-	return db, nil
+	log.Println("Successfully connected to database")
+
+	datebase := DataBase{
+		DB:            db,
+		MigrationsDir: cfg.Database.MigrationsDir,
+	}
+
+	return &datebase, nil
 }
