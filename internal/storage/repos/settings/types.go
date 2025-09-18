@@ -1,6 +1,13 @@
 package settings
 
-import "time"
+import (
+	"time"
+	"todoapp/internal/storage"
+)
+
+type Base struct {
+	storage.DataBase
+}
 
 type Setting struct {
 	DefaultTz       time.Location
