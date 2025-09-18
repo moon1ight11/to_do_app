@@ -1,9 +1,13 @@
 package tasks
 
-import "log"
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 // отображение всех родительских задач пользователя
-func (db *Base) ParentTasks(owner_id int) ([]Task, error) {
+func (db *Base) ParentTasks(owner_id uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, title, description, start_at, end_at
 				FROM tasks
@@ -13,8 +17,7 @@ func (db *Base) ParentTasks(owner_id int) ([]Task, error) {
 	var tasks []Task
 	rows, err := db.DB.Query(query, owner_id)
 	if err != nil {
-		log.Println("Error in ParentTasks query", err)
-		return nil, err
+		return nil, fmt.Errorf("Error in ParentTasks query: %w", err)
 	}
 	defer rows.Close()
 
@@ -28,8 +31,7 @@ func (db *Base) ParentTasks(owner_id int) ([]Task, error) {
 			&task.End_at,
 		)
 		if err != nil {
-			log.Println("Error in ParentTasks scan", err)
-			return nil, err
+			return nil, fmt.Errorf("Error in ParentTasks scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
@@ -37,7 +39,7 @@ func (db *Base) ParentTasks(owner_id int) ([]Task, error) {
 }
 
 // отображение всех подзадач одной родительской задачи пользователя
-func (db *Base) Subtasks(owner_id int, parent_id int) ([]Task, error) {
+func (db *Base) Subtasks(owner_id uuid.UUID, parent_id uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, parent_task_id, title, description, start_at, end_at
 				FROM tasks
@@ -47,8 +49,7 @@ func (db *Base) Subtasks(owner_id int, parent_id int) ([]Task, error) {
 	var tasks []Task
 	rows, err := db.DB.Query(query, owner_id, parent_id)
 	if err != nil {
-		log.Println("Error in Subtasks query", err)
-		return nil, err
+		return nil, fmt.Errorf("Error in Subtasks query: %w", err)
 	}
 	defer rows.Close()
 
@@ -63,8 +64,7 @@ func (db *Base) Subtasks(owner_id int, parent_id int) ([]Task, error) {
 			&task.End_at,
 		)
 		if err != nil {
-			log.Println("Error in Subtasks scan", err)
-			return nil, err
+			return nil, fmt.Errorf("Error in Subtasks scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
@@ -72,7 +72,7 @@ func (db *Base) Subtasks(owner_id int, parent_id int) ([]Task, error) {
 }
 
 // отображение только невыполненных родительских задач
-func (db *Base) OpenParentTasks(owner_id int) ([]Task, error) {
+func (db *Base) OpenParentTasks(owner_id uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, title, description, start_at, end_at
 				FROM tasks
@@ -82,8 +82,7 @@ func (db *Base) OpenParentTasks(owner_id int) ([]Task, error) {
 	var tasks []Task
 	rows, err := db.DB.Query(query, owner_id)
 	if err != nil {
-		log.Println("Error in OpenParentTasks query", err)
-		return nil, err
+		return nil, fmt.Errorf("Error in OpenParentTasks query: %w", err)
 	}
 	defer rows.Close()
 
@@ -97,8 +96,7 @@ func (db *Base) OpenParentTasks(owner_id int) ([]Task, error) {
 			&task.End_at,
 		)
 		if err != nil {
-			log.Println("Error in OpenParentTasks scan", err)
-			return nil, err
+			return nil, fmt.Errorf("Error in OpenParentTasks scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
@@ -106,7 +104,7 @@ func (db *Base) OpenParentTasks(owner_id int) ([]Task, error) {
 }
 
 // отображение только невыполненных подзадач
-func (db *Base) OpenSubtasks(owner_id int, parent_id int) ([]Task, error) {
+func (db *Base) OpenSubtasks(owner_id uuid.UUID, parent_id uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, parent_task_id, title, description, start_at, end_at
 				FROM tasks
@@ -116,8 +114,7 @@ func (db *Base) OpenSubtasks(owner_id int, parent_id int) ([]Task, error) {
 	var tasks []Task
 	rows, err := db.DB.Query(query, owner_id, parent_id)
 	if err != nil {
-		log.Println("Error in OpenSubtasks query", err)
-		return nil, err
+		return nil, fmt.Errorf("Error in OpenSubtasks query: %w", err)
 	}
 	defer rows.Close()
 
@@ -132,8 +129,7 @@ func (db *Base) OpenSubtasks(owner_id int, parent_id int) ([]Task, error) {
 			&task.End_at,
 		)
 		if err != nil {
-			log.Println("Error in OpenSubtasks scan", err)
-			return nil, err
+			return nil, fmt.Errorf("Error in OpenSubtasks scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}

@@ -1,12 +1,13 @@
 package settings
 
 import (
-	"log"
+	"fmt"
 	"time"
+	"github.com/google/uuid"
 )
 
 // изменение временной зоны по id
-func (db *Base) UpdateTZ(newTZ string, id int) error {
+func (db *Base) UpdateTZ(newTZ string, id uuid.UUID) error {
 	query := `
 				UPDATE settings
 				SET default_tz = $1
@@ -14,15 +15,14 @@ func (db *Base) UpdateTZ(newTZ string, id int) error {
 			`
 	_, err := db.DB.Exec(query, newTZ, id)
 	if err != nil {
-		log.Println("Error in UpdateTZ query", err)
-		return err
+		return fmt.Errorf("Error in UpdateTZ query: %w", err)
 	}
 
 	return nil
 }
 
 // изменение продолжительности по id
-func (db *Base) UpdateDuration(newDuration time.Duration, id int) error {
+func (db *Base) UpdateDuration(newDuration time.Duration, id uuid.UUID) error {
 	query := `
 				UPDATE settings
 				SET default_duration = $1
@@ -30,8 +30,7 @@ func (db *Base) UpdateDuration(newDuration time.Duration, id int) error {
 			`
 	_, err := db.DB.Exec(query, newDuration, id)
 	if err != nil {
-		log.Println("Error in UpdateDuration query", err)
-		return err
+		return fmt.Errorf("Error in UpdateDuration query: %w", err)
 	}
 
 	return nil

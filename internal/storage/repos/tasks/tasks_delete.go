@@ -1,31 +1,33 @@
 package tasks
 
-import "log"
+import (
+	"fmt"
+	"github.com/google/uuid"
+)
 
 // удаление задачи\подзадачи
-func (db *Base) DeleteTask(id int) error {
+func (db *Base) DeleteTask(id uuid.UUID) error {
 	query := `
 				DELETE FROM tasks
 				WHERE id = $1
 			`
 	_, err := db.DB.Exec(query, id)
 	if err != nil {
-		log.Println("Error in DeleteTask query", err)
-		return err
+		return fmt.Errorf("Error in DeleteTask query: %w", err)
 	}
+
 	return nil
 }
 
 // удаление всех задач пользователя
-func (db *Base) DeleteAllTasks(owner_id int) error {
+func (db *Base) DeleteAllTasks(owner_id uuid.UUID) error {
 	query := `
 				DELETE FROM tasks
 				WHERE owner_id = $1
 			`
 	_, err := db.DB.Exec(query, owner_id)
 	if err != nil {
-		log.Println("Error in DeleteAllTasks query", err)
-		return err
+		return fmt.Errorf("Error in DeleteAllTasks query: %w", err)
 	}
 	return nil
 }

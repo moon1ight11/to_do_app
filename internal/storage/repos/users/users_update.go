@@ -1,9 +1,13 @@
 package users
 
-import "log"
+import (
+	"fmt"
 
-// обновление имени 
-func (db *Base) UpdateName (newName string, id int) error {
+	"github.com/google/uuid"
+)
+
+// обновление имени
+func (db *Base) UpdateName (newName string, id uuid.UUID) error {
 	query := `
 				UPDATE users
 				SET name = $1, updated_at = NOW()
@@ -11,15 +15,14 @@ func (db *Base) UpdateName (newName string, id int) error {
 			`
 	_, err := db.DB.Exec(query, newName, id)
 	if err != nil {
-		log.Println("Error in UpdateName query", err)
-		return err
+		return fmt.Errorf("Error in UpdateName query: %w", err)
 	}
 
 	return nil
 }
 
 // обновление пароля
-func (db *Base) UpdatePass (newPass string, id int) error {
+func (db *Base) UpdatePass (newPass string, id uuid.UUID) error {
 	query := `
 				UPDATE users
 				SET pass = $1, updated_at = NOW()
@@ -27,14 +30,13 @@ func (db *Base) UpdatePass (newPass string, id int) error {
 			`
 	_, err := db.DB.Exec(query, newPass, id)
 	if err != nil {
-		log.Println("Error in UpdatePass query", err)
-		return err
+		return fmt.Errorf("Error in UpdatePass query: %w", err)
 	}
 	return nil
 }
 
 // обновление почты
-func (db *Base) UpdateEmail (newEmail string, id int) error {
+func (db *Base) UpdateEmail (newEmail string, id uuid.UUID) error {
 	query := `
 				UPDATE users
 				SET email = $1, updated_at = NOW()
@@ -42,8 +44,7 @@ func (db *Base) UpdateEmail (newEmail string, id int) error {
 			`
 	_, err := db.DB.Exec(query, newEmail, id)
 	if err != nil {
-		log.Println("Error in UpdateEmail query", err)
-		return err
+		return fmt.Errorf("Error in UpdateEmail query: %w", err)
 	}
 	return nil
 }

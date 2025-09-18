@@ -1,12 +1,14 @@
 package tasks
 
 import (
-	"log"
+	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // изменение названия задачи
-func (db *Base) UpdateTitle(id int, newTitle string) error {
+func (db *Base) UpdateTitle(id uuid.UUID, newTitle string) error {
 	query := `
 				UPDATE tasks
 				SET title = $1, updated_at = NOW()
@@ -14,15 +16,14 @@ func (db *Base) UpdateTitle(id int, newTitle string) error {
 			`
 	_, err := db.DB.Exec(query, id, newTitle)
 	if err != nil {
-		log.Println("Error in UpdateTitle query", err)
-		return err
+		return fmt.Errorf("Error in UpdateTitle query: %w", err)
 	}
 
 	return nil
 }
 
 // изменение описания задачи
-func (db *Base) UpdateDescription(id int, newDescription string) error {
+func (db *Base) UpdateDescription(id uuid.UUID, newDescription string) error {
 	query := `
 				UPDATE tasks
 				SET description = $1, updated_at = NOW()
@@ -30,15 +31,14 @@ func (db *Base) UpdateDescription(id int, newDescription string) error {
 			`
 	_, err := db.DB.Exec(query, id, newDescription)
 	if err != nil {
-		log.Println("Error in UpdateDescription query", err)
-		return err
+		return fmt.Errorf("Error in UpdateDescription query: %w", err)
 	}
 
 	return nil
 }
 
 // изменение времени начала задачи
-func (db *Base) UpdateStartAt(id int, newStart time.Time) error {
+func (db *Base) UpdateStartAt(id uuid.UUID, newStart time.Time) error {
 	query := `
 				UPDATE tasks
 				SET start_at = $1, updated_at = NOW()
@@ -46,15 +46,14 @@ func (db *Base) UpdateStartAt(id int, newStart time.Time) error {
 			`
 	_, err := db.DB.Exec(query, id, newStart)
 	if err != nil {
-		log.Println("Error in UpdateStartAt query", err)
-		return err
+		return fmt.Errorf("Error in UpdateStartAt query: %w", err)
 	}
 
 	return nil
 }
 
 // изменение времени окончания задачи
-func (db *Base) UpdateEndAt(id int, newEnd time.Time) error {
+func (db *Base) UpdateEndAt(id uuid.UUID, newEnd time.Time) error {
 	query := `
 				UPDATE tasks
 				SET end_at = $1, updated_at = NOW()
@@ -62,15 +61,14 @@ func (db *Base) UpdateEndAt(id int, newEnd time.Time) error {
 			`
 	_, err := db.DB.Exec(query, id, newEnd)
 	if err != nil {
-		log.Println("Error in UpdateEndAt query", err)
-		return err
+		return fmt.Errorf("Error in UpdateEndAt query: %w", err)
 	}
 
 	return nil
 }
 
 // изменение статуса задачи (+ выполнено)
-func (db *Base) TaskCompleted(id int) error {
+func (db *Base) TaskCompleted(id uuid.UUID) error {
 	query := `
 				UPDATE tasks
 				SET completed_at = NOW(), updated_at = NOW()
@@ -78,8 +76,7 @@ func (db *Base) TaskCompleted(id int) error {
 			`
 	_, err := db.DB.Exec(query, id)
 	if err != nil {
-		log.Println("Error in TaskCompleted query", err)
-		return err
+		return fmt.Errorf("Error in TaskCompleted query: %w", err)
 	}
 
 	return nil

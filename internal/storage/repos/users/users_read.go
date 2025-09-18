@@ -1,6 +1,10 @@
 package users
 
-import "log"
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 // получение списка всех пользователей
 func (db *Base) AllUsers() ([]User, error) {
@@ -12,8 +16,7 @@ func (db *Base) AllUsers() ([]User, error) {
 
 	rows, err := db.DB.Query(query)
 	if err != nil {
-		log.Println("Error in AllUsers query", err)
-		return nil, err
+		return nil, fmt.Errorf("Error in AllUsers query: %w", err)
 	}
 	defer rows.Close()
 
@@ -21,8 +24,7 @@ func (db *Base) AllUsers() ([]User, error) {
 		var user User
 		err := rows.Scan(&user.Id, &user.Name, &user.Email)
 		if err != nil {
-			log.Println("Error in AllUsers scan", err)
-			return nil, err
+			return nil, fmt.Errorf("Error in AllUsers scan: %w", err)
 		}
 		users = append(users, user)
 	}
@@ -39,15 +41,14 @@ func (db *Base) AmountUsers() (int, error) {
 	var amount int
 	err := db.DB.QueryRow(query).Scan(&amount)
 	if err != nil {
-		log.Println("Error in AmountUsers query", err)
-		return 0, err
+		return 0, fmt.Errorf("Error in AmountUsers query: %w", err)
 	}
 
 	return amount, nil
 }
 
 // получение пользователя по id
-func (db *Base) UserById(id int) (User, error) {
+func (db *Base) UserById(id uuid.UUID) (User, error) {
 	query := `
 				SELECT id, name, email, pass
 				FROM users
@@ -56,8 +57,7 @@ func (db *Base) UserById(id int) (User, error) {
 	var user User
 	err := db.DB.QueryRow(query, id).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
 	if err != nil {
-		log.Println("Error in UserById query", err)
-		return User{}, err
+		return User{}, fmt.Errorf("Error in UserById query: %w", err)
 	}
 
 	return user, nil
@@ -73,8 +73,7 @@ func (db *Base) UserByName(name string) (User, error) {
 	var user User
 	err := db.DB.QueryRow(query, name).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
 	if err != nil {
-		log.Println("Error in UserByName query", err)
-		return User{}, err
+		return User{}, fmt.Errorf("Error in UserByName query: %w", err)
 	}
 
 	return user, nil
@@ -90,8 +89,7 @@ func (db *Base) UserByEmail(email string) (User, error) {
 	var user User
 	err := db.DB.QueryRow(query, email).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
 	if err != nil {
-		log.Println("Error in UserByEmail query", err)
-		return User{}, err
+		return User{}, fmt.Errorf("Error in UserByEmail query: %w", err)
 	}
 
 	return user, nil

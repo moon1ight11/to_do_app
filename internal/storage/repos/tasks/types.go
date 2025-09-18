@@ -3,6 +3,7 @@ package tasks
 import (
 	"time"
 	"todoapp/internal/storage"
+	"github.com/google/uuid"
 )
 
 type Base struct {
@@ -10,9 +11,9 @@ type Base struct {
 }
 
 type Task struct {
-	Id          int
-	Parent_id   int
-	Owner_id	int
+	Id          uuid.UUID
+	Parent_id   *uuid.UUID
+	Owner_id    uuid.UUID
 	Start_at    time.Time
 	End_at      time.Time
 	Title       string
