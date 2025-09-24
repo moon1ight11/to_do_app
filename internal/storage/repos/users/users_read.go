@@ -2,35 +2,8 @@ package users
 
 import (
 	"fmt"
-
 	"github.com/google/uuid"
 )
-
-// получение списка всех пользователей
-func (db *Base) AllUsers() ([]User, error) {
-	query := `
-				SELECT id, name, email
-				FROM users
-			`
-	var users []User
-
-	rows, err := db.DB.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("Error in AllUsers query: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var user User
-		err := rows.Scan(&user.Id, &user.Name, &user.Email)
-		if err != nil {
-			return nil, fmt.Errorf("Error in AllUsers scan: %w", err)
-		}
-		users = append(users, user)
-	}
-
-	return users, nil
-}
 
 // получение количества пользователей
 func (db *Base) AmountUsers() (int, error) {
@@ -63,22 +36,6 @@ func (db *Base) UserById(id uuid.UUID) (User, error) {
 	return user, nil
 }
 
-// получение пользователя по имени
-func (db *Base) UserByName(name string) (User, error) {
-	query := `
-				SELECT id, name, email, pass
-				FROM users
-				WHERE name = $1
-			`
-	var user User
-	err := db.DB.QueryRow(query, name).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
-	if err != nil {
-		return User{}, fmt.Errorf("Error in UserByName query: %w", err)
-	}
-
-	return user, nil
-}
-
 // получение пользователя по почте
 func (db *Base) UserByEmail(email string) (User, error) {
 	query := `
@@ -93,4 +50,40 @@ func (db *Base) UserByEmail(email string) (User, error) {
 	}
 
 	return user, nil
+}
+
+// проверка занятости имени пользователя
+func (db *Base) CheckUserName(userName string) (bool, error) {
+	query := `
+				SELECT EXISTS(
+					SELECT 1
+					FROM users
+					WHERE name = $1)
+			`
+	var exist bool
+
+	err := db.DB.QueryRow(query, userName).Scan(&exist)
+	if err != nil {
+		return false, fmt.Errorf("Error in CheckUserName query: %w", err)
+	}
+
+	return exist, nil
+}
+
+// проверка свободности почты
+func (db *Base) CheckUserEmail(userEmail string) (bool, error) {
+	query := `
+				SELECT EXISTS(
+					SELECT 1
+					FROM users
+					WHERE email = $1)
+			`
+	var exist bool
+
+	err := db.DB.QueryRow(query, userEmail).Scan(&exist)
+	if err != nil {
+		return false, fmt.Errorf("Error in CheckUserEmail query: %w", err)
+	}
+
+	return exist, nil
 }

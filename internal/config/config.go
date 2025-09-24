@@ -10,9 +10,7 @@ import (
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("./config")
-	viper.AddConfigPath("/etc/myapp/")
+	viper.AddConfigPath("./internal/config")
 
 	setDefaults()
 
