@@ -101,6 +101,9 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 		User_email *string   `json:"user_email" binding:"required,email"`
 	}
 
+	// user_id получим из куков
+	UpdatedUser.User_id = uuid.New()
+
 	if err := c.ShouldBindJSON(&UpdatedUser); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
@@ -120,18 +123,11 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 
 // удаление пользователя
 func (u *UserHandler) DeleteUser(c *gin.Context) {
-	// получаем id пользователя
-	idStr := c.Param("id")
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		log.Println("Error in Parse uuid")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
+	// получаем id пользователя из куков
+	id := uuid.New()
 
 	// проверяем существование пользователя
-	_ , err = u.userService.CheckUserByID(id)
+	_ , err := u.userService.CheckUserByID(id)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})

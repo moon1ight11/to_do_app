@@ -73,6 +73,15 @@ func (u *UserService) CheckUser(User users.User) (bool, error) {
 
 // обновление полей пользователя
 func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_email *string, user_id uuid.UUID) error {
+	// открываем транзакцию
+	transaction, err := u.userRepo.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// отложенно откатываем транзакцию
+	defer transaction.Rollback()
+
 	// если меняем имя
 	if user_name != nil {
 		// проверяем, не занято ли новое имя
@@ -116,6 +125,9 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 			return err
 		}
 	}
+
+	// если все ок - подтверждаем транзакцию
+	transaction.Commit()
 	return nil
 }
 
