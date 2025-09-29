@@ -10,8 +10,11 @@ func Router() {
 
 	c := gin.Default()
 
-	c.GET("/settings/:id", settingsHandler.GetSettings)
-	c.POST("/update_settings", settingsHandler.UpdateSettings)
+	// получение настроек пользователя
+	c.GET("/v1/private/settings", settingsHandler.GetSettings)
+
+	// изменение настроек
+	c.PATCH("/v1/private/settings", settingsHandler.UpdateSettings)
 
 	c.Run(":8080")
 
