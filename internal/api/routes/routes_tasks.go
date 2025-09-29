@@ -37,12 +37,11 @@ func (t *TasksRouter) AddTask(c *gin.Context) {
 
 // получение списка задач пользователя
 func (t *TasksRouter) GetTasksList(c *gin.Context) {
-	// получаем id пользователя
-	idStr := c.Param("id")
-	user_id, err := uuid.Parse(idStr)
+	// получаем id пользователя (пока заглушка, далее - из jwt)
+	user_id, err := uuid.NewUUID()
 	if err != nil {
-		log.Println("Error in parse uuid", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
+		log.Println(err)
+		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
 		return
 	}
 
@@ -56,6 +55,27 @@ func (t *TasksRouter) GetTasksList(c *gin.Context) {
 	c.JSON((http.StatusOK), gin.H{"message": Tasks})
 }
 
+// получение одной задачи по id
+func (t *TasksRouter) GetOneTask(c *gin.Context) {
+	// получаем id задачи
+	idStr := c.Param("task_id")
+	task_id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Println("Error in parse uuid", err)
+		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
+		return
+	}
+
+	task, err := t.taskService.GetOneTask(task_id)
+	if err != nil {
+		log.Println(err)
+		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
+		return
+	}
+
+	c.JSON((http.StatusOK), gin.H{"task": task})
+}
+
 // изменение полей задач
 func (t *TasksRouter) UpdateTasks(c *gin.Context) {
 	var UpdatedTask tasks.Task
@@ -66,8 +86,20 @@ func (t *TasksRouter) UpdateTasks(c *gin.Context) {
 		return
 	}
 
+	// получаем id задачи которую нужно изменить
+	idStr := c.Param("task_id")
+	task_id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Println("Error in parse uuid", err)
+		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
+		return
+	}
+
+	// указываем, какая задача должна быть изменена
+	UpdatedTask.Id = &task_id
+
 	// меняем необходимые поля
-	err := t.taskService.ChangeTask(*UpdatedTask.Id, UpdatedTask.Title, UpdatedTask.Description, UpdatedTask.Start_at, UpdatedTask.End_at, UpdatedTask.Completed_at)
+	err = t.taskService.ChangeTask(*UpdatedTask.Id, UpdatedTask.Title, UpdatedTask.Description, UpdatedTask.Start_at, UpdatedTask.End_at, UpdatedTask.Completed_at)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err})

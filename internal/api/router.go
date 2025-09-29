@@ -10,11 +10,21 @@ func Router() {
 
 	c := gin.Default()
 
-	c.POST("/create_task", tasksRouter.AddTask)
-	c.GET("/tasks/:id", tasksRouter.GetTasksList)
-	c.PATCH("/tasks/change", tasksRouter.UpdateTasks)
-	c.DELETE("tasks/delete/:id", tasksRouter.DeleteTask)
+	// создание задачи
+	c.POST("/v1/private/tasks", tasksRouter.AddTask)
+
+	// получение всех задач пользователя
+	c.GET("/v1/private/tasks", tasksRouter.GetTasksList)
+
+	// получение одной задачи по id
+	c.GET("/v1/private/tasks/:task_id", tasksRouter.GetOneTask)
+
+	// изменение задачи
+	c.PATCH("/v1/private/tasks/:task_id", tasksRouter.UpdateTasks)
+
+	// удаление задачи
+	c.DELETE("/v1/private/tasks/:task_id", tasksRouter.DeleteTask)
 
 
 	c.Run(":8080")
-}
+} 
