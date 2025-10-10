@@ -11,12 +11,12 @@ CREATE TABLE
         email       VARCHAR NOT NULL UNIQUE,
         pass        VARCHAR NOT NULL
     );
-CREATE INDEX todo_app.idx_users_name ON todo_app.users(name);
-CREATE INDEX todo_app.idx_users_email ON todo_app.users(email);
+CREATE INDEX idx_users_name ON todo_app.users(name);
+CREATE INDEX idx_users_email ON todo_app.users(email);
 
 CREATE TABLE
     todo_app.settings (
-        user_id             UUID PRIMARY KEY REFERENCES users(id),
+        user_id             UUID PRIMARY KEY REFERENCES todo_app.users(id),
         default_tz          VARCHAR,
         default_duration    INTERVAL
     );
@@ -24,8 +24,8 @@ CREATE TABLE
 CREATE TABLE
     todo_app.tasks (
         id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        parent_task_id  UUID REFERENCES tasks(id),
-        owner_id        UUID REFERENCES users(id),
+        parent_task_id  UUID REFERENCES todo_app.tasks(id),
+        owner_id        UUID REFERENCES todo_app.users(id),
         created_at      TIMESTAMPTZ DEFAULT now(),
         updated_at      TIMESTAMPTZ,
         start_at        TIMESTAMPTZ,
@@ -34,8 +34,8 @@ CREATE TABLE
         title           VARCHAR,
         description     VARCHAR
     );
-CREATE INDEX todo_app.idx_tasks_owner_id ON todo_app.tasks(owner_id);
-CREATE INDEX todo_app.idx_tasks_completed_at ON todo_app.tasks(completed_at NOT NULL);
+CREATE INDEX idx_tasks_owner_id ON todo_app.tasks(owner_id);
+CREATE INDEX idx_tasks_completed_at ON todo_app.tasks(completed_at);
 -- +goose StatementEnd
 
 -- +goose Down

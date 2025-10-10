@@ -9,7 +9,7 @@ import (
 // Добавление пользователя в DB и возврат его id
 func (db *Base) AddUser(NewUser User) (uuid.UUID, error) {
 	query := `
-				INSERT INTO users (name, pass, email)
+				INSERT INTO todo_app.users (name, pass, email)
 				VALUES ($1, $2, $3)
 				RETURNING id
 			`

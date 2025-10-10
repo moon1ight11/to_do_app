@@ -10,6 +10,14 @@ type UserService struct {
 	userRepo *users.Base
 }
 
+func NewUserService(userRepo *users.Base) *UserService {
+	if userRepo == nil {
+		fmt.Println("userRepo cannot be nil")
+		return nil
+	}
+	return &UserService{userRepo: userRepo}
+}
+
 // проверка свободности имени пользователя
 func (u *UserService) CheckName(user_name string) (bool, error) {
 	exist, err := u.userRepo.CheckUserName(user_name)
@@ -51,24 +59,20 @@ func (u *UserService) CreateUser(User users.User) (uuid.UUID, error) {
 }
 
 // проверка пользователя
-func (u *UserService) CheckUser(User users.User) (bool, error) {
+func (u *UserService) CheckUser(User users.User) (bool, users.User, error) {
 	var foundUser users.User
 	var err error
 
 	foundUser, err = u.userRepo.UserByEmail(User.Email)
 	if err != nil {
-		return false, fmt.Errorf("Error in search by email")
-	}
-
-	if foundUser == (users.User{}) {
-		return false, fmt.Errorf("User not found")
+		return false, users.User{}, err
 	}
 
 	if foundUser.Pass != User.Pass {
-		return false, fmt.Errorf("Passwords not match")
+		return false, users.User{}, fmt.Errorf("Passwords not match")
 	}
 
-	return true, nil
+	return true, foundUser, nil
 }
 
 // обновление полей пользователя
@@ -85,7 +89,7 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 	// если меняем имя
 	if user_name != nil {
 		// проверяем, не занято ли новое имя
-		NameExist, err := u.CheckName(*user_name)
+		NameExist, err := u.userRepo.CheckUserName(*user_name)
 		if err != nil {
 			return err
 		}
@@ -94,7 +98,7 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 		}
 
 		// если ок - меняем
-		err = u.userRepo.UpdateName(*user_name, user_id)
+		err = u.userRepo.UpdateName(*user_name, user_id, transaction)
 		if err != nil {
 			return err
 		}
@@ -102,7 +106,7 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 
 	// если меняем пароль
 	if user_pass != nil {
-		err := u.userRepo.UpdatePass(*user_pass, user_id)
+		err := u.userRepo.UpdatePass(*user_pass, user_id, transaction)
 		if err != nil {
 			return err
 		}
@@ -120,7 +124,7 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 		}
 
 		// если ок - меняем
-		err = u.userRepo.UpdateEmail(*user_email, user_id)
+		err = u.userRepo.UpdateEmail(*user_email, user_id, transaction)
 		if err != nil {
 			return err
 		}

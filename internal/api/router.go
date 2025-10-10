@@ -1,26 +1,26 @@
 package api
 
 import (
-	"todoapp/internal/api/routes"
+	"todoapp/internal/api/handlers"
 	"github.com/gin-gonic/gin"
 )
 
-func Router () {
-	userHandler := &routes.UserHandler{} 
+func UpRouter(userHandler *handlers.UserHandler) {
 
-	c := gin.Default()
+	defaultGroup := gin.Default()
+	privateGroup := defaultGroup.Group("/v1/private")
 
 	// регистрация
-	c.POST("/v1/register", userHandler.AddUser)
+	defaultGroup.POST("/v1/register", userHandler.AddUser)
 
 	// авторизация
-	c.GET("/v1/auth", userHandler.CheckUser)
+	defaultGroup.GET("/v1/auth", userHandler.CheckUser)
 
 	// обновление пользователя
-	c.PATCH("v1/private/users", userHandler.UpdateUser)
+	privateGroup.PATCH("/users", userHandler.UpdateUser)
 
 	// удаление пользователя
-	c.DELETE("v1/private/users", userHandler.DeleteUser)
+	privateGroup.DELETE("/users", userHandler.DeleteUser)
 
-	c.Run(":8080")
+	defaultGroup.Run(":8080")
 }

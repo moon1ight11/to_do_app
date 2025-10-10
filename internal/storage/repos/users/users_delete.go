@@ -9,7 +9,7 @@ import (
 // удаление пользователя по id
 func (db *Base) DeleteUser(id uuid.UUID) error {
 	query := `
-				DELETE FROM users
+				DELETE FROM todo_app.users
 				WHERE id = $1
 			`
 	_, err := db.DB.Exec(query, id)

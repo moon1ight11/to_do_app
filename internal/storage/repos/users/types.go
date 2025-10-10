@@ -2,12 +2,18 @@ package users
 
 import (
 	"todoapp/internal/storage"
-
 	"github.com/google/uuid"
 )
 
 type Base struct {
 	storage.DataBase
+}
+
+func NewBase(db *storage.DataBase) *Base {
+    if db == nil || db.DB == nil {
+        panic("database connection cannot be nil")
+    }
+    return &Base{DataBase: *db}
 }
 
 type User struct {
