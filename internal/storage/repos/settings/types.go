@@ -10,6 +10,6 @@ type Base struct {
 }
 
 type Setting struct {
-	DefaultTz       time.Location
-	DefaultDuration time.Duration
+	DefaultTz       string        `json:"default_tz" binding:"required"`
+	DefaultDuration time.Duration `json:"default_duration" binding:"required"`
 }
