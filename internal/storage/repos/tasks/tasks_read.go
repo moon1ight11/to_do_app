@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -134,4 +133,22 @@ func (db *Base) OpenSubtasks(owner_id uuid.UUID, parent_id uuid.UUID) ([]Task, e
 		tasks = append(tasks, task)
 	}
 	return tasks, nil
+}
+
+// поиск задачи по id
+func (db *Base) GetTaskById(id uuid.UUID) (Task, error) {
+	query := `
+				SELECT id, title, description, start_at, end_at
+				FROM tasks
+				WHERE id = $1
+			`
+	
+	var task Task
+	err := db.DB.QueryRow(query, id).Scan(&task.Id, &task.Title, &task.Description, &task.Start_at, &task.End_at)
+
+	if err != nil {
+        return Task{}, fmt.Errorf("task not found")
+	}
+
+	return task, nil
 }

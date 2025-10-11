@@ -1,9 +1,9 @@
 package tasks
 
 import (
+	"github.com/google/uuid"
 	"time"
 	"todoapp/internal/storage"
-	"github.com/google/uuid"
 )
 
 type Base struct {
@@ -11,11 +11,13 @@ type Base struct {
 }
 
 type Task struct {
-	Id          uuid.UUID
-	Parent_id   *uuid.UUID
-	Owner_id    uuid.UUID
-	Start_at    time.Time
-	End_at      time.Time
-	Title       string
-	Description string
+	Id           *uuid.UUID `json:"task_id"`
+	Parent_id    *uuid.UUID `json:"parent_id"`
+	Owner_id     uuid.UUID  `json:"owner_id"`
+	Start_at     *time.Time `json:"start_at"`
+	End_at       *time.Time `json:"end_at"`
+	Title        *string     `json:"title"`
+	Description  *string    `json:"description"`
+	Completed_at *time.Time `json:"completed_at"`
+	Subtasks     *[]Task    `json:"subtasks"`
 }
