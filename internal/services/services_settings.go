@@ -10,6 +10,8 @@ type SettingsService struct {
 	settingsRepo *settings.Base
 }
 
+
+
 // получение настроек
 func (s *SettingsService) GetSettings(id uuid.UUID) (settings.Setting, error) {
 	UserSettings, err := s.settingsRepo.SettingsById(id)

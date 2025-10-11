@@ -1,21 +1,21 @@
 package api
 
 import (
-	"todoapp/internal/api/routes"
 	"github.com/gin-gonic/gin"
+	"todoapp/internal/api/handlers"
 )
 
-func Router() {
-	settingsHandler := &routes.SettingsHandler{}
+func UpRouterSet(settingsHandler *handlers.SettingsHandler) {
 
-	c := gin.Default()
+	defaultGroup := gin.Default()
+	privateGroup := defaultGroup.Group("/v1/private")
 
 	// получение настроек пользователя
-	c.GET("/v1/private/settings", settingsHandler.GetSettings)
+	privateGroup.GET("/settings", settingsHandler.GetSettings)
 
 	// изменение настроек
-	c.PATCH("/v1/private/settings", settingsHandler.UpdateSettings)
+	privateGroup.PATCH("/settings", settingsHandler.UpdateSettings)
 
-	c.Run(":8080")
+	defaultGroup.Run(":8080")
 
 }

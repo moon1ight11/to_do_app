@@ -1,4 +1,4 @@
-package routes
+package handlers
 
 import (
 	"log"
@@ -11,6 +11,13 @@ import (
 
 type SettingsHandler struct {
 	settingsService *services.SettingsService
+}
+
+func NewSettingsHandler(settingsService *services.SettingsService) *SettingsHandler {
+	if settingsService == nil {
+		panic("settings service cannot be nil")
+	}
+	return &SettingsHandler{settingsService: settingsService}
 }
 
 // получение настроек пользователя
