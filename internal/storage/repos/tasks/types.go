@@ -10,6 +10,10 @@ type Base struct {
 	storage.DataBase
 }
 
+func NewTasksBase(db *storage.DataBase) *Base {
+    return &Base{DataBase: *db}
+}
+
 type Task struct {
 	Id           *uuid.UUID `json:"task_id"`
 	Parent_id    *uuid.UUID `json:"parent_id"`

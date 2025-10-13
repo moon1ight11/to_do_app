@@ -9,7 +9,7 @@ import (
 func (db *Base) ParentTasks(owner_id uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, title, description, start_at, end_at
-				FROM tasks
+				FROM todo_app.tasks
 				WHERE owner_id = $1 AND parent_task_id IS NULL
 				ORDER BY created_at DESC
 			`
@@ -41,8 +41,8 @@ func (db *Base) ParentTasks(owner_id uuid.UUID) ([]Task, error) {
 func (db *Base) Subtasks(owner_id uuid.UUID, parent_id uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, parent_task_id, title, description, start_at, end_at
-				FROM tasks
-				WHERE owner_id = $1, AND parent_task_id = $2
+				FROM todo_app.tasks
+				WHERE owner_id = $1 AND parent_task_id = $2
 				ORDER BY created_at DESC
 			`
 	var tasks []Task
@@ -138,16 +138,16 @@ func (db *Base) OpenSubtasks(owner_id uuid.UUID, parent_id uuid.UUID) ([]Task, e
 // поиск задачи по id
 func (db *Base) GetTaskById(id uuid.UUID) (Task, error) {
 	query := `
-				SELECT id, title, description, start_at, end_at
-				FROM tasks
+				SELECT id, title, description, start_at, end_at, parent_task_id
+				FROM todo_app.tasks
 				WHERE id = $1
 			`
 	
 	var task Task
-	err := db.DB.QueryRow(query, id).Scan(&task.Id, &task.Title, &task.Description, &task.Start_at, &task.End_at)
+	err := db.DB.QueryRow(query, id).Scan(&task.Id, &task.Title, &task.Description, &task.Start_at, &task.End_at, &task.Parent_id)
 
 	if err != nil {
-        return Task{}, fmt.Errorf("task not found")
+        return Task{}, fmt.Errorf("Task not found")
 	}
 
 	return task, nil

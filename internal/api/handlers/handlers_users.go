@@ -16,9 +16,6 @@ type UserHandler struct {
 }
 
 func NewUserHandler(userService *services.UserService) *UserHandler {
-	if userService == nil {
-		panic("userService cannot be nil")
-	}
 	return &UserHandler{userService: userService}
 }
 
@@ -54,6 +51,7 @@ func (u *UserHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	// если нет - отклоняем
 	if nameExist {
 		log.Println("Name already exist")
 		c.JSON((http.StatusConflict), gin.H{"error": "Name already exist"})
@@ -68,6 +66,7 @@ func (u *UserHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	// если нет - отклоняем
 	if emailExist {
 		log.Println("Email already exist")
 		c.JSON((http.StatusConflict), gin.H{"error": "Email already exist"})
@@ -115,7 +114,6 @@ func (u *UserHandler) CheckUser(c *gin.Context) {
 
 // обновление параметров пользователя
 func (u *UserHandler) UpdateUser(c *gin.Context) {
-	// получаем обновленного пользователя с фронта
 	var UpdatedUser struct {
 		User_id    uuid.UUID `json:"user_id"`
 		User_name  *string   `json:"user_name"`
@@ -124,8 +122,9 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	// user_id получим из куков
-	UpdatedUser.User_id, _ = uuid.Parse("6ae2b323-e4f1-411c-b664-00d6cb66af6a")
+	UpdatedUser.User_id, _ = uuid.Parse("8b1bbae9-6e4d-41dc-984f-3a4a6c0abb17")
 
+	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&UpdatedUser); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
@@ -139,10 +138,11 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 		matched, err := regexp.MatchString(pattern, *UpdatedUser.User_email)
 		if err != nil {
 			log.Println("Error in MatchString", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Error in MatchString"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
+		// если нет - отклоняем
 		if !matched {
 			log.Println("New email not looks like email")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "New email not looks like email"})
@@ -164,7 +164,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 // удаление пользователя
 func (u *UserHandler) DeleteUser(c *gin.Context) {
 	// получаем id пользователя из куков
-	id, _ := uuid.Parse("050ac451-7b1b-4b0d-b177-6ecc7818404f")
+	id, _ := uuid.Parse("387e408f-080f-4323-9d92-edaab6bf37a9")
 
 	// проверяем существование пользователя
 	_, err := u.userService.CheckUserByID(id)

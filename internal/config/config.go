@@ -33,7 +33,7 @@ func setDefaults() {
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.host", "localhost")
 
-	viper.SetDefault("database.port", 5432)
+	viper.SetDefault("database.port", 15432)
 	viper.SetDefault("database.migrationsDir", "./migrations")
 
 	viper.SetDefault("jwt.expiration", "24h")

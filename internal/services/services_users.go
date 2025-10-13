@@ -11,10 +11,6 @@ type UserService struct {
 }
 
 func NewUserService(userRepo *users.Base) *UserService {
-	if userRepo == nil {
-		fmt.Println("userRepo cannot be nil")
-		return nil
-	}
 	return &UserService{userRepo: userRepo}
 }
 

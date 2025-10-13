@@ -9,10 +9,7 @@ type Base struct {
 	storage.DataBase
 }
 
-func NewBase(db *storage.DataBase) *Base {
-    if db == nil || db.DB == nil {
-        panic("database connection cannot be nil")
-    }
+func NewUserBase(db *storage.DataBase) *Base {
     return &Base{DataBase: *db}
 }
 

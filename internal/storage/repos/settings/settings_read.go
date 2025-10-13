@@ -9,8 +9,8 @@ import (
 func (db *Base) SettingsById(id uuid.UUID) (Setting, error) {
 	query := `
 				SELECT default_tz, default_duration
-				FROM settings
-				WHERE id = $1
+				FROM todo_app.settings
+				WHERE user_id = $1
 			`
 	var setting Setting
 	err := db.DB.QueryRow(query, id).Scan(&setting.DefaultTz, &setting.DefaultDuration)

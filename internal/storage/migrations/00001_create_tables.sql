@@ -17,15 +17,15 @@ CREATE INDEX idx_users_email ON todo_app.users(email);
 CREATE TABLE
     todo_app.settings (
         user_id             UUID PRIMARY KEY REFERENCES todo_app.users(id),
-        default_tz          VARCHAR,
-        default_duration    INTERVAL
+        default_tz          VARCHAR DEFAULT 'UTC',
+        default_duration    NUMERIC DEFAULT 43200
     );
 
 CREATE TABLE
     todo_app.tasks (
         id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        parent_task_id  UUID REFERENCES todo_app.tasks(id),
-        owner_id        UUID REFERENCES todo_app.users(id),
+        parent_task_id  UUID REFERENCES todo_app.tasks(id) ON DELETE CASCADE,
+        owner_id        UUID REFERENCES todo_app.users(id) ON DELETE CASCADE,
         created_at      TIMESTAMPTZ DEFAULT now(),
         updated_at      TIMESTAMPTZ,
         start_at        TIMESTAMPTZ,

@@ -8,6 +8,8 @@ import (
 	"todoapp/internal/services"
 	"todoapp/internal/storage"
 	"todoapp/internal/storage/repos/users"
+	"todoapp/internal/storage/repos/settings"
+	"todoapp/internal/storage/repos/tasks"
 )
 
 func main() {
@@ -30,10 +32,18 @@ func main() {
 	}
 	
 	// инициализация зависимостей
-	userRepo := users.NewBase(db)
+	userRepo := users.NewUserBase(db)
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
+	settingsRepo := settings.NewSettingsBase(db)
+	settingsService := services.NewSettingsService(settingsRepo)
+	settingsHandler := handlers.NewSettingsHandler(settingsService)
+
+	tasksRepo := tasks.NewTasksBase(db)
+	tasksService := services.NewTasksService(tasksRepo)
+	tasksHandler := handlers.NewTasksHandler(tasksService)	
+
 	// запуск роутера
-	api.UpRouter(userHandler)
+	api.UpRouter(userHandler, settingsHandler, tasksHandler)
 }

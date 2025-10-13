@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"fmt"
-
 	"github.com/google/uuid"
 )
 

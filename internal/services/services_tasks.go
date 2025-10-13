@@ -1,13 +1,18 @@
 package services
 
 import (
-	"github.com/google/uuid"
+	"fmt"
 	"time"
 	"todoapp/internal/storage/repos/tasks"
+	"github.com/google/uuid"
 )
 
 type TasksService struct {
 	tasksRepo *tasks.Base
+}
+
+func NewTasksService(tasksRepo *tasks.Base) *TasksService {
+	return &TasksService{tasksRepo: tasksRepo}
 }
 
 // создание задачи(подзадачи)
@@ -59,9 +64,37 @@ func (t *TasksService) ChangeTask(id uuid.UUID, new_title *string, new_descripti
 	// отложенно откатываем транзакцию
 	defer transaction.Rollback()
 
+	// находим задачу, которую нужно изменить
+	OldTask, err := t.tasksRepo.GetTaskById(id)
+	if err != nil {
+		return err
+	}
+
+	// проверяем, чтобы время старта было раньше времени конца
+	// если меняются оба времени
+	if new_end_at != nil && new_start_at != nil {
+		if new_end_at.Before(*new_start_at) {
+			return fmt.Errorf("end_at cannot be before start_at")
+		}
+	}
+
+	// если меняется толко время начала
+	if new_end_at == nil && new_start_at != nil && OldTask.End_at != nil {
+		if OldTask.End_at.Before(*new_start_at) {
+			return fmt.Errorf("end_at cannot be before start_at")
+		}
+	}
+
+	// если меняется только конец
+	if new_start_at == nil && new_end_at != nil && OldTask.Start_at != nil {
+		if new_end_at.Before(*OldTask.Start_at) {
+			return fmt.Errorf("end_at cannot be before start_at")
+		}
+	}
+
 	// меняем название
 	if new_title != nil {
-		err := t.tasksRepo.UpdateTitle(id, *new_title)
+		err := t.tasksRepo.UpdateTitle(id, *new_title, transaction)
 		if err != nil {
 			return err
 		}
@@ -69,7 +102,7 @@ func (t *TasksService) ChangeTask(id uuid.UUID, new_title *string, new_descripti
 
 	// меняем описание
 	if new_description != nil {
-		err := t.tasksRepo.UpdateDescription(id, *new_description)
+		err := t.tasksRepo.UpdateDescription(id, *new_description, transaction)
 		if err != nil {
 			return err
 		}
@@ -77,7 +110,7 @@ func (t *TasksService) ChangeTask(id uuid.UUID, new_title *string, new_descripti
 
 	// меняем время начала
 	if new_start_at != nil {
-		err := t.tasksRepo.UpdateStartAt(id, *new_start_at)
+		err := t.tasksRepo.UpdateStartAt(id, *new_start_at, transaction)
 		if err != nil {
 			return err
 		}
@@ -85,7 +118,7 @@ func (t *TasksService) ChangeTask(id uuid.UUID, new_title *string, new_descripti
 
 	// меняем время завершения
 	if new_end_at != nil {
-		err := t.tasksRepo.UpdateEndAt(id, *new_end_at)
+		err := t.tasksRepo.UpdateEndAt(id, *new_end_at, transaction)
 		if err != nil {
 			return err
 		}
@@ -93,7 +126,7 @@ func (t *TasksService) ChangeTask(id uuid.UUID, new_title *string, new_descripti
 
 	// меняем статус задачи
 	if completed_at != nil {
-		err := t.tasksRepo.TaskCompleted(id)
+		err := t.tasksRepo.TaskCompleted(id, transaction)
 		if err != nil {
 			return err
 		}
@@ -121,25 +154,25 @@ func (t *TasksService) DeleteTask(id uuid.UUID) error {
 		return err
 	}
 
-	// ищем подзадачи для задачи
-	DeletedSubtasks, err := t.tasksRepo.Subtasks(DeletedTask.Owner_id, *DeletedTask.Id)
-	if err != nil {
-		return err
-	}
+	// // ищем подзадачи для задачи
+	// DeletedSubtasks, err := t.tasksRepo.Subtasks(DeletedTask.Owner_id, *DeletedTask.Id)
+	// if err != nil {
+	// 	return err
+	// }
 
-	// если подзадачи есть - удаляем
-	if len(DeletedSubtasks) > 0 {
-		for i := range DeletedSubtasks {
-			St := DeletedSubtasks[i]
-			err := t.tasksRepo.DeleteTask(*St.Id)
-			if err != nil {
-				return err
-			}
-		}
-	}
+	// // если подзадачи есть - удаляем
+	// if len(DeletedSubtasks) > 0 {
+	// 	for i := range DeletedSubtasks {
+	// 		St := DeletedSubtasks[i]
+	// 		err := t.tasksRepo.DeleteTask(*St.Id, transaction)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
 
-	// удаляем саму задачу
-	err = t.tasksRepo.DeleteTask(*DeletedTask.Id)
+	// удаляем задачу с подзадачами
+	err = t.tasksRepo.DeleteTask(*DeletedTask.Id, transaction)
 	if err != nil {
 		return err
 	}

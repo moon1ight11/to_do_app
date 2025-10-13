@@ -1,19 +1,19 @@
 package settings
 
 import (
+	"database/sql"
 	"fmt"
-	"time"
 	"github.com/google/uuid"
 )
 
 // изменение временной зоны по id
-func (db *Base) UpdateTZ(newTZ string, id uuid.UUID) error {
+func (db *Base) UpdateTZ(newTZ string, id uuid.UUID, tx *sql.Tx) error {
 	query := `
-				UPDATE settings
+				UPDATE todo_app.settings
 				SET default_tz = $1
-				WHERE id = $2
+				WHERE user_id = $2
 			`
-	_, err := db.DB.Exec(query, newTZ, id)
+	_, err := tx.Exec(query, newTZ, id)
 	if err != nil {
 		return fmt.Errorf("Error in UpdateTZ query: %w", err)
 	}
@@ -22,13 +22,13 @@ func (db *Base) UpdateTZ(newTZ string, id uuid.UUID) error {
 }
 
 // изменение продолжительности по id
-func (db *Base) UpdateDuration(newDuration time.Duration, id uuid.UUID) error {
+func (db *Base) UpdateDuration(newDuration float64, id uuid.UUID, tx *sql.Tx) error {
 	query := `
-				UPDATE settings
+				UPDATE todo_app.settings
 				SET default_duration = $1
-				WHERE id = $2
+				WHERE user_id = $2
 			`
-	_, err := db.DB.Exec(query, newDuration, id)
+	_, err := tx.Exec(query, newDuration, id)
 	if err != nil {
 		return fmt.Errorf("Error in UpdateDuration query: %w", err)
 	}
