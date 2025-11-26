@@ -85,6 +85,26 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /v1/private/users:
+    get:
+      summary: Метод для получения информации о пользователе
+      tags:
+       - Users
+      security:
+       - cookieAuth: []
+      responses:
+        "200":
+          description: Успешный ответ с информацией о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "default":
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
     patch:
       summary: Метод для обновления информации пользователя
       tags:
