@@ -8,9 +8,9 @@ import (
 
 // загрузка конфигурации
 func Load() (*Config, error) {
-	viper.SetConfigName("example.config")
+	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./internal/config")
+	viper.AddConfigPath(".")
 
 	setDefaults()
 

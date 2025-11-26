@@ -2,12 +2,11 @@ package users
 
 import (
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
 // Добавление пользователя в DB и возврат его id
-func (db *Base) AddUser(NewUser User) (uuid.UUID, error) {
+func (db *Repo) CreateUser(NewUser User) (uuid.UUID, error) {
 	transaction, err := db.DB.Begin()
 	if err != nil {
 		return uuid.Nil, err

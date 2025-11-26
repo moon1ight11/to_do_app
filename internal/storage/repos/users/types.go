@@ -5,12 +5,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type Base struct {
+type Repo struct {
 	storage.DataBase
 }
 
-func NewUserBase(db *storage.DataBase) *Base {
-    return &Base{DataBase: *db}
+func NewUserRepo(db *storage.DataBase) *Repo {
+    return &Repo{DataBase: *db}
 }
 
 type User struct {

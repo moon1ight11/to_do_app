@@ -1,53 +1,86 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"todoapp/internal/api/handlers"
+	"todoapp/internal/jwt"
+	"todoapp/internal/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
-func UpRouter(userHandler *handlers.UserHandler, settingsHandler *handlers.SettingsHandler, tasksHandler *handlers.TasksHandler) {
+type Router struct {
+	userHandler     *handlers.UserHandler
+	settingsHandler *handlers.SettingsHandler
+	tasksHandler    *handlers.TasksHandler
+	authHandler     *handlers.AuthHandler
+	ginEngine       *gin.Engine
+}
+
+func NewRouter(
+	userHandler *handlers.UserHandler,
+	settingsHandler *handlers.SettingsHandler,
+	tasksHandler *handlers.TasksHandler,
+	authHandler *handlers.AuthHandler,
+) *Router {
+	return &Router{
+		userHandler:     userHandler,
+		settingsHandler: settingsHandler,
+		tasksHandler:    tasksHandler,
+		authHandler:     authHandler,
+		ginEngine:       gin.Default(),
+	}
+}
+
+func (r *Router) Run() error {
+	err := r.ginEngine.Run(":8080")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Router) Init(jwtService jwt.TokenService) {
+	r.ginEngine.Use(middleware.CORS())
+	
 	// группировка роутов
-	defaultGroup := gin.Default()
-	privateGroup := defaultGroup.Group("/v1/private")
+	privateGroup := r.ginEngine.Group("/v1/private")
+	authGroup := r.ginEngine.Group("/v1/auth")
+
+	// MIDDLEWARES //
+	privateGroup.Use(middleware.Auth(jwtService))
+
+	// АУТЕНТИФИКАЦИЯ //
+	// регистрация
+	authGroup.POST("/sign-up", r.authHandler.SignUp)
+	// авторизация
+	authGroup.POST("/sign-in", r.authHandler.SignIn)
+	// разлогин
+	authGroup.GET("/sign-out", r.authHandler.SignOut)
 
 	// ЮЗЕРЫ //
-
-	// регистрация
-	defaultGroup.POST("/v1/register", userHandler.AddUser)
-
-	// авторизация
-	defaultGroup.GET("/v1/auth", userHandler.CheckUser)
-
+	// получение данных пользователя
+	privateGroup.GET("/users", r.userHandler.GetUser)
 	// обновление пользователя
-	privateGroup.PATCH("/users", userHandler.UpdateUser)
-
+	privateGroup.PATCH("/users", r.userHandler.UpdateUser)
 	// удаление пользователя
-	privateGroup.DELETE("/users", userHandler.DeleteUser)
+	privateGroup.DELETE("/users", r.userHandler.DeleteUser)
 
 	// НАСТРОЙКИ //
-
 	// получение настроек пользователя
-	privateGroup.GET("/settings", settingsHandler.GetSettings)
-
+	privateGroup.GET("/settings", r.settingsHandler.GetSettings)
 	// изменение настроек
-	privateGroup.PATCH("/settings", settingsHandler.UpdateSettings)
+	privateGroup.PATCH("/settings", r.settingsHandler.UpdateSettings)
 
 	// ЗАДАЧИ //
-
 	// создание задачи
-	privateGroup.POST("/tasks", tasksHandler.AddTask)
-
+	privateGroup.POST("/tasks", r.tasksHandler.CreateTask)
 	// получение всех задач пользователя
-	privateGroup.GET("/tasks", tasksHandler.GetTasksList)
-
+	privateGroup.GET("/tasks", r.tasksHandler.GetTasks)
 	// получение одной задачи по id
-	privateGroup.GET("/tasks/:task_id", tasksHandler.GetOneTask)
-
+	privateGroup.GET("/tasks/:task_id", r.tasksHandler.GetTaskById)
 	// изменение задачи
-	privateGroup.PATCH("/tasks/:task_id", tasksHandler.UpdateTasks)
-
+	privateGroup.PATCH("/tasks/:task_id", r.tasksHandler.UpdateTask)
 	// удаление задачи
-	privateGroup.DELETE("/tasks/:task_id", tasksHandler.DeleteTask)
-
-	defaultGroup.Run(":8080")
+	privateGroup.DELETE("/tasks/:task_id", r.tasksHandler.DeleteTask)
 }

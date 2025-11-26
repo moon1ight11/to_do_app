@@ -6,16 +6,16 @@ import (
 )
 
 type SettingsService struct {
-	settingsRepo *settings.Base
+	settingsRepo *settings.Repo
 }
 
-func NewSettingsService(settingsRepo *settings.Base) *SettingsService {
+func NewSettingsService(settingsRepo *settings.Repo) *SettingsService {
 	return &SettingsService{settingsRepo: settingsRepo}
 }
 
 // получение настроек
-func (s *SettingsService) GetSettings(id uuid.UUID) (settings.Setting, error) {
-	UserSettings, err := s.settingsRepo.SettingsById(id)
+func (s *SettingsService) GetSettings(user_id uuid.UUID) (settings.Setting, error) {
+	UserSettings, err := s.settingsRepo.SettingsById(user_id)
 	if err != nil {
 		return settings.Setting{}, err
 	}
@@ -24,7 +24,7 @@ func (s *SettingsService) GetSettings(id uuid.UUID) (settings.Setting, error) {
 }
 
 // изменение настроек
-func (s *SettingsService) UpdatedSettings(id uuid.UUID, new_duration *float64, new_location *string) error {
+func (s *SettingsService) UpdateSettings(user_id uuid.UUID, new_duration *float64, new_location *string) error {
 	// открываем транзакцию
 	transaction, err := s.settingsRepo.DB.Begin()
 	if err != nil {
@@ -36,7 +36,7 @@ func (s *SettingsService) UpdatedSettings(id uuid.UUID, new_duration *float64, n
 
 	// если меняем продолжительность
 	if new_duration != nil {
-		err := s.settingsRepo.UpdateDuration(*new_duration, id, transaction)
+		err := s.settingsRepo.UpdateDuration(*new_duration, user_id, transaction)
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func (s *SettingsService) UpdatedSettings(id uuid.UUID, new_duration *float64, n
 
 	// если меняем таймзону
 	if new_location != nil {
-		err := s.settingsRepo.UpdateTZ(*new_location, id, transaction)
+		err := s.settingsRepo.UpdateTZ(*new_location, user_id, transaction)
 		if err != nil {
 			return err
 		}

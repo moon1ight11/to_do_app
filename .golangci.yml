@@ -1,0 +1,38 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - govet
+    - revive
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - gocyclo
+    - unconvert
+    - misspell
+  
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+
+    gocyclo:
+      min-complexity: 15
+
+    funlen:
+      lines: 100
+      statements: 50
+      ignore-comments: true
+
+  exclusions:
+    warn-unused: true
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+  exclusions:
+    warn-unused: true

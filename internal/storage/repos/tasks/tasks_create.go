@@ -3,7 +3,7 @@ package tasks
 import "fmt"
 
 // создание задачи
-func (db *Base) CreateTask(NewTask Task) error {
+func (db *Repo) CreateTask(NewTask Task) error {
 	query := `
 				INSERT INTO todo_app.tasks (title, description, start_at, end_at, owner_id, parent_task_id)
 				VALUES ($1, $2, $3, $4, $5, $6)

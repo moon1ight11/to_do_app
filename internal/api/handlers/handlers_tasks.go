@@ -1,25 +1,42 @@
 package handlers
 
 import (
-	"log"
-	"net/http"
-	"todoapp/internal/services"
-	"todoapp/internal/storage/repos/tasks"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"log"
+	"net/http"
+	"todoapp/internal/jwt"
+	"todoapp/internal/services"
+	"todoapp/internal/storage/repos/tasks"
 )
 
 type TasksHandler struct {
 	taskService *services.TasksService
+	jwtService  jwt.TokenService
 }
 
-func NewTasksHandler(taskService *services.TasksService) *TasksHandler {
-	return &TasksHandler{taskService: taskService}
+func NewTasksHandler(taskService *services.TasksService, jwtService jwt.TokenService) *TasksHandler {
+	return &TasksHandler{
+		taskService: taskService,
+		jwtService:  jwtService}
 }
 
 // создание задачи
-func (t *TasksHandler) AddTask(c *gin.Context) {
+func (t *TasksHandler) CreateTask(c *gin.Context) {
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
+		return
+	}
+
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
 	var NewTask tasks.Task
 
 	// получаем задачу с фронта
@@ -29,8 +46,8 @@ func (t *TasksHandler) AddTask(c *gin.Context) {
 		return
 	}
 
-	// owner_id получаем из куков
-	NewTask.Owner_id, _ = uuid.Parse("b6609ddd-95f4-42f0-993e-7f07f3fa1d5b")
+	// устанавливаем owner_id
+	NewTask.Owner_id = UserId
 
 	// если есть временные рамки - время на выполнение не должно быть отрицательным
 	if NewTask.Start_at != nil && NewTask.End_at != nil {
@@ -53,11 +70,22 @@ func (t *TasksHandler) AddTask(c *gin.Context) {
 }
 
 // получение списка задач пользователя
-func (t *TasksHandler) GetTasksList(c *gin.Context) {
-	// получаем id пользователя (пока заглушка, далее - из jwt)
-	user_id, _ := uuid.Parse("8b1bbae9-6e4d-41dc-984f-3a4a6c0abb17")
+func (t *TasksHandler) GetTasks(c *gin.Context) {
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
+		return
+	}
 
-	Tasks, err := t.taskService.GetTasks(user_id)
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
+	Tasks, err := t.taskService.GetAllTasks(UserId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
@@ -68,7 +96,7 @@ func (t *TasksHandler) GetTasksList(c *gin.Context) {
 }
 
 // получение одной задачи по id
-func (t *TasksHandler) GetOneTask(c *gin.Context) {
+func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем id задачи
 	idStr := c.Param("task_id")
 	task_id, err := uuid.Parse(idStr)
@@ -81,7 +109,7 @@ func (t *TasksHandler) GetOneTask(c *gin.Context) {
 	task, err := t.taskService.GetOneTask(task_id)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
+		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -89,7 +117,7 @@ func (t *TasksHandler) GetOneTask(c *gin.Context) {
 }
 
 // изменение полей задач
-func (t *TasksHandler) UpdateTasks(c *gin.Context) {
+func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	var UpdatedTask tasks.Task
 	// получаем измененную задачу с фронта
 	if err := c.ShouldBindJSON(&UpdatedTask); err != nil {
@@ -106,9 +134,6 @@ func (t *TasksHandler) UpdateTasks(c *gin.Context) {
 		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
 		return
 	}
-
-	// из куков получаем id пользователя
-	UpdatedTask.Owner_id, _ = uuid.Parse("b6609ddd-95f4-42f0-993e-7f07f3fa1d5b")
 
 	// указываем, какая задача должна быть изменена
 	UpdatedTask.Id = &task_id

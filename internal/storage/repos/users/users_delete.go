@@ -2,12 +2,11 @@ package users
 
 import (
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
 // удаление пользователя по id
-func (db *Base) DeleteUser(id uuid.UUID) error {
+func (db *Repo) DeleteUser(user_id uuid.UUID) error {
 	transaction, err := db.DB.Begin()
 	if err != nil {
 		return err
@@ -19,7 +18,7 @@ func (db *Base) DeleteUser(id uuid.UUID) error {
 					DELETE FROM todo_app.settings
 					WHERE user_id = $1
 					`
-	_, err = transaction.Exec(querySettings, id)
+	_, err = transaction.Exec(querySettings, user_id)
 	if err != nil {
 		return fmt.Errorf("Error in DeleteUser query: %w", err)
 	}
@@ -28,7 +27,7 @@ func (db *Base) DeleteUser(id uuid.UUID) error {
 				DELETE FROM todo_app.users
 				WHERE id = $1
 			`
-	_, err = transaction.Exec(query, id)
+	_, err = transaction.Exec(query, user_id)
 	if err != nil {
 		return fmt.Errorf("Error in DeleteUser query: %w", err)
 	}

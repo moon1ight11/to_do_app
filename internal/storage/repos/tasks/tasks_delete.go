@@ -7,12 +7,12 @@ import (
 )
 
 // удаление задачи\подзадачи
-func (db *Base) DeleteTask(id uuid.UUID, tx *sql.Tx) error {
+func (db *Repo) DeleteTask(task_id uuid.UUID, tx *sql.Tx) error {
 	query := `
 				DELETE FROM todo_app.tasks
 				WHERE id = $1
 			`
-	_, err := tx.Exec(query, id)
+	_, err := tx.Exec(query, task_id)
 	if err != nil {
 		return fmt.Errorf("Error in DeleteTask query: %w", err)
 	}
@@ -21,7 +21,7 @@ func (db *Base) DeleteTask(id uuid.UUID, tx *sql.Tx) error {
 }
 
 // удаление всех задач пользователя
-func (db *Base) DeleteAllTasks(owner_id uuid.UUID) error {
+func (db *Repo) DeleteAllTasks(owner_id uuid.UUID) error {
 	query := `
 				DELETE FROM todo_app.tasks
 				WHERE owner_id = $1

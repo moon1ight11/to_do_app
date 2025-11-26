@@ -4,12 +4,12 @@ import (
 	"todoapp/internal/storage"
 )
 
-type Base struct {
+type Repo struct {
 	storage.DataBase
 }
 
-func NewSettingsBase(db *storage.DataBase) *Base {
-	return &Base{DataBase: *db}
+func NewSettingsRepo(db *storage.DataBase) *Repo {
+	return &Repo{DataBase: *db}
 }
 
 type Setting struct {

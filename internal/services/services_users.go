@@ -7,11 +7,21 @@ import (
 )
 
 type UserService struct {
-	userRepo *users.Base
+	userRepo *users.Repo
 }
 
-func NewUserService(userRepo *users.Base) *UserService {
+func NewUserService(userRepo *users.Repo) *UserService {
 	return &UserService{userRepo: userRepo}
+}
+
+// получение данных пользователя
+func (u *UserService) GetUser(UserId uuid.UUID) (users.User, error) {
+	user, err := u.userRepo.UserById(UserId)
+	if err != nil {
+		return users.User{}, err
+	}
+
+	return user, nil
 }
 
 // проверка свободности имени пользователя
@@ -35,8 +45,8 @@ func (u *UserService) CheckEmail(user_email string) (bool, error) {
 }
 
 // проверка существования пользователя по id
-func (u *UserService) CheckUserByID(id uuid.UUID) (bool, error) {
-	_, err := u.userRepo.UserById(id)
+func (u *UserService) CheckUserByID(user_id uuid.UUID) (bool, error) {
+	_, err := u.userRepo.UserById(user_id)
 	if err != nil {
 		return false, err
 	}
@@ -45,8 +55,8 @@ func (u *UserService) CheckUserByID(id uuid.UUID) (bool, error) {
 }
 
 // добавление пользователя в БД
-func (u *UserService) CreateUser(User users.User) (uuid.UUID, error) {
-	user_id, err := u.userRepo.AddUser(User)
+func (u *UserService) AddUser(User users.User) (uuid.UUID, error) {
+	user_id, err := u.userRepo.CreateUser(User)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -132,8 +142,8 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 }
 
 // удаление пользователя
-func (u *UserService) DeleteUser(id uuid.UUID) error {
-	err := u.userRepo.DeleteUser(id)
+func (u *UserService) DeleteUser(user_id uuid.UUID) error {
+	err := u.userRepo.DeleteUser(user_id)
 	if err != nil {
 		return err
 	}

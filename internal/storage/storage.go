@@ -3,10 +3,10 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"log"
 	"todoapp/internal/config"
-	_ "github.com/lib/pq"
 )
 
 // метод DB для применения миграций
@@ -29,20 +29,20 @@ func (d *DataBase) UpMigrations() error {
 
 // соединение с DB и return экземпляра
 func NewStorage(cfg *config.Config) (*DataBase, error) {
-    connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-        cfg.Database.Host,
-        cfg.Database.Port,
-        cfg.Database.User,
-        cfg.Database.Password,
-        cfg.Database.Name,
-    )
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Name,
+	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Println("Failed to open database:", err)
 		return nil, err
 	}
-	 
+
 	err = db.Ping()
 	if err != nil {
 		log.Println("Failed to ping database:", err)

@@ -7,113 +7,64 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"todoapp/internal/jwt"
 	"todoapp/internal/services"
-	"todoapp/internal/storage/repos/users"
 )
 
 type UserHandler struct {
 	userService *services.UserService
+	jwtService  jwt.TokenService
 }
 
-func NewUserHandler(userService *services.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(userService *services.UserService, jwtService jwt.TokenService) *UserHandler {
+	return &UserHandler{
+		userService: userService,
+		jwtService:  jwtService,
+	}
 }
 
-// добаление нового пользователя в БД
-func (u *UserHandler) AddUser(c *gin.Context) {
-	// получаем пользователя с фронта
-	var NewUser users.User
-	if err := c.ShouldBindJSON(&NewUser); err != nil {
-		log.Println("Error in ShouldBindJSON", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
+// получение данных пользователя
+func (u *UserHandler) GetUser(c *gin.Context) {
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
 		return
 	}
 
-	// проверка валидности имени пользователя
-	if strings.TrimSpace(NewUser.Name) == "" {
-		log.Println("Name is empty")
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Name is empty"})
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
 
-	// проверка валидности пароля
-	if strings.TrimSpace(NewUser.Pass) == "" {
-		log.Println("Pass is empty")
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Pass is empty"})
-		return
-	}
-
-	// проверяем, свободно ли имя пользователя
-	nameExist, err := u.userService.CheckName(NewUser.Name)
+	user, err := u.userService.GetUser(UserId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
 		return
 	}
 
-	// если нет - отклоняем
-	if nameExist {
-		log.Println("Name already exist")
-		c.JSON((http.StatusConflict), gin.H{"error": "Name already exist"})
-		return
-	}
-
-	// проверяем, свободна ли указанная почта
-	emailExist, err := u.userService.CheckEmail(NewUser.Email)
-	if err != nil {
-		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
-		return
-	}
-
-	// если нет - отклоняем
-	if emailExist {
-		log.Println("Email already exist")
-		c.JSON((http.StatusConflict), gin.H{"error": "Email already exist"})
-		return
-	}
-
-	// добавляем пользователя в БД
-	ID, err := u.userService.CreateUser(NewUser)
-	if err != nil {
-		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"user_id": ID})
-}
-
-// проверка существующего пользователя
-func (u *UserHandler) CheckUser(c *gin.Context) {
-	// получаем пользователя с фронта
-	var user users.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		log.Println("Error in ShouldBindJSON", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
-		return
-	}
-
-	// проверяем пароль на валидность
-	if strings.TrimSpace(user.Pass) == "" {
-		log.Println("Pass is empty")
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Pass is empty"})
-		return
-	}
-
-	// проверка пользователя
-	_, foundUser, err := u.userService.CheckUser(user)
-	if err != nil {
-		log.Println(err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"user": foundUser})
+	c.JSON((http.StatusOK), gin.H{"user": user})
 }
 
 // обновление параметров пользователя
 func (u *UserHandler) UpdateUser(c *gin.Context) {
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
+		return
+	}
+
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
 	var UpdatedUser struct {
 		User_id    uuid.UUID `json:"user_id"`
 		User_name  *string   `json:"user_name"`
@@ -121,14 +72,32 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 		User_email *string   `json:"user_email"`
 	}
 
-	// user_id получим из куков
-	UpdatedUser.User_id, _ = uuid.Parse("8b1bbae9-6e4d-41dc-984f-3a4a6c0abb17")
+	// устанавливаем user_id
+	UpdatedUser.User_id = UserId
 
 	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&UpdatedUser); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
+	}
+
+	// если обновляется имя - чтобы было не пустое
+	if UpdatedUser.User_name != nil {
+		if strings.TrimSpace(*UpdatedUser.User_name) == "" {
+			log.Println("New name is empty")
+			c.JSON((http.StatusBadRequest), gin.H{"error": "New name is empty"})
+			return
+		}
+	}
+
+	// если обновляется пароль - чтобы не был пустым
+	if UpdatedUser.User_pass != nil {
+		if strings.TrimSpace(*UpdatedUser.User_pass) == "" {
+			log.Println("New pass is empty")
+			c.JSON((http.StatusBadRequest), gin.H{"error": "New pass is empty"})
+			return
+		}
 	}
 
 	// если обновляется почта
@@ -163,19 +132,30 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 
 // удаление пользователя
 func (u *UserHandler) DeleteUser(c *gin.Context) {
-	// получаем id пользователя из куков
-	id, _ := uuid.Parse("387e408f-080f-4323-9d92-edaab6bf37a9")
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
+		return
+	}
+
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+		return
+	}
 
 	// проверяем существование пользователя
-	_, err := u.userService.CheckUserByID(id)
+	_, err := u.userService.CheckUserByID(UserId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
 		return
 	}
 
 	// удаляем пользователя
-	err = u.userService.DeleteUser(id)
+	err = u.userService.DeleteUser(UserId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})

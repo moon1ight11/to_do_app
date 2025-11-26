@@ -6,24 +6,39 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"todoapp/internal/jwt"
 	"todoapp/internal/services"
 )
 
 type SettingsHandler struct {
 	settingsService *services.SettingsService
+	jwtService      jwt.TokenService
 }
 
-func NewSettingsHandler(settingsService *services.SettingsService) *SettingsHandler {
-	return &SettingsHandler{settingsService: settingsService}
+func NewSettingsHandler(settingsService *services.SettingsService, jwtService jwt.TokenService) *SettingsHandler {
+	return &SettingsHandler{
+		settingsService: settingsService,
+		jwtService:      jwtService}
 }
 
 // получение настроек пользователя
 func (s *SettingsHandler) GetSettings(c *gin.Context) {
-	// получаем id из куков
-	id, _ := uuid.Parse("8b1bbae9-6e4d-41dc-984f-3a4a6c0abb17")
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
+		return
+	}
+
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+		return
+	}
 
 	// находим настройки по id
-	user_settings, err := s.settingsService.GetSettings(id)
+	user_settings, err := s.settingsService.GetSettings(UserId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
@@ -35,8 +50,19 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 
 // изменение настроек пользователя
 func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
-	// получаем id из куков
-	id, _ := uuid.Parse("8b1bbae9-6e4d-41dc-984f-3a4a6c0abb17")
+	// получаем id из контекста
+	userIDValue, exist := c.Get("UserId")
+	if !exist {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
+		return
+	}
+
+	// приводим значение к uuid
+	UserId, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+		return
+	}
 
 	var UpdatedSettings struct {
 		Default_duration *float64 `json:"default_duration"`
@@ -70,12 +96,12 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	// изменяем настройки
-	err := s.settingsService.UpdatedSettings(id, UpdatedSettings.Default_duration, UpdatedSettings.Default_tz)
+	err := s.settingsService.UpdateSettings(UserId, UpdatedSettings.Default_duration, UpdatedSettings.Default_tz)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"message": "settings updated succesfull"})
+	c.JSON((http.StatusOK), gin.H{"updated_settings": UpdatedSettings})
 }

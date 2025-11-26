@@ -2,14 +2,16 @@ package main
 
 import (
 	"log"
+
 	"todoapp/internal/api"
 	"todoapp/internal/api/handlers"
 	"todoapp/internal/config"
+	"todoapp/internal/jwt"
 	"todoapp/internal/services"
 	"todoapp/internal/storage"
-	"todoapp/internal/storage/repos/users"
 	"todoapp/internal/storage/repos/settings"
 	"todoapp/internal/storage/repos/tasks"
+	"todoapp/internal/storage/repos/users"
 )
 
 func main() {
@@ -30,20 +32,32 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to upping migrations", err)
 	}
-	
+
+	jwtService := jwt.NewJWTService(cfg.JWT.Secret, cfg.JWT.Expiration)
+
 	// инициализация зависимостей
-	userRepo := users.NewUserBase(db)
+	userRepo := users.NewUserRepo(db)
 	userService := services.NewUserService(userRepo)
-	userHandler := handlers.NewUserHandler(userService)
+	userHandler := handlers.NewUserHandler(userService, jwtService)
+	authHandler := handlers.NewAuthHandler(userService, jwtService)
 
-	settingsRepo := settings.NewSettingsBase(db)
+	settingsRepo := settings.NewSettingsRepo(db)
 	settingsService := services.NewSettingsService(settingsRepo)
-	settingsHandler := handlers.NewSettingsHandler(settingsService)
+	settingsHandler := handlers.NewSettingsHandler(settingsService, jwtService)
 
-	tasksRepo := tasks.NewTasksBase(db)
+	tasksRepo := tasks.NewTasksRepo(db)
 	tasksService := services.NewTasksService(tasksRepo)
-	tasksHandler := handlers.NewTasksHandler(tasksService)	
+	tasksHandler := handlers.NewTasksHandler(tasksService, jwtService)
+
+	// инициализация роутера
+	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)
+
+	// инициализация роутов
+	router.Init(jwtService)
 
 	// запуск роутера
-	api.UpRouter(userHandler, settingsHandler, tasksHandler)
+	err = router.Run()
+	if err != nil {
+		log.Fatal("Failed to run Gin router", err)
+	}
 }
