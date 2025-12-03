@@ -1,0 +1,7 @@
+services:
+  front:
+    build: 
+      dockerfile: ./df/front.df
+    ports:
+      - 127.0.0.1:3000:3000
+    
