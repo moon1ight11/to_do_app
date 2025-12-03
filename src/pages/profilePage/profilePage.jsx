@@ -94,7 +94,7 @@ const ProfilePage = () => {
         setLoading(true);
         
         // Запрос данных пользователя
-        const userResponse = await fetch('http://localhost:8080/v1/private/users', {
+        const userResponse = await fetch('https://todoappmoon.ru/v1/private/users', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const ProfilePage = () => {
         console.log('User data:', userData);
         
         // Запрос настроек
-        const settingsResponse = await fetch('http://localhost:8080/v1/private/settings', {
+        const settingsResponse = await fetch('https://todoappmoon.ru/v1/private/settings', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ const ProfilePage = () => {
   const handleDeleteUser = async () => {
     if (window.confirm('Вы уверены, что хотите удалить пользователя?')) {
       try {
-        const response = await fetch(`http://localhost:8080/v1/private/users`, {
+        const response = await fetch(`https://todoappmoon.ru/v1/private/users`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -239,7 +239,7 @@ const ProfilePage = () => {
 
       const hasUserChanges = Object.values(userData).some(val => val !== null);
       if (hasUserChanges) {
-        userResponse = await fetch(`http://localhost:8080/v1/private/users`, {
+        userResponse = await fetch(`https://todoappmoon.ru/v1/private/users`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -259,7 +259,7 @@ const ProfilePage = () => {
 
       const hasSettingsChanges = Object.values(settingsData).some(val => val !== null);
       if (hasSettingsChanges) {
-        settingsResponse = await fetch('http://localhost:8080/v1/private/settings', {
+        settingsResponse = await fetch('https://todoappmoon.ru/v1/private/settings', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

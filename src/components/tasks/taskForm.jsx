@@ -24,8 +24,8 @@ const TaskForm = ({ onSubmit, onCancel, isEditing = false, task = null, parentId
         setLoading(true);
         try {
             const url = isEditing 
-                ? `http://localhost:8080/v1/private/tasks/${task.id}`
-                : 'http://localhost:8080/v1/private/tasks';
+                ? `https://todoappmoon.ru/v1/private/tasks/${task.id}`
+                : 'https://todoappmoon.ru/v1/private/tasks';
                 
             const method = isEditing ? 'PATCH' : 'POST';
 

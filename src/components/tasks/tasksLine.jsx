@@ -32,7 +32,7 @@ const TasksLine = ({ title, description, start_at, end_at, completed_at, task_id
         setIsLoading(true);
         try {
             const newStatus = !isComplete;
-            const response = await fetch(`http://localhost:8080/v1/private/tasks/${task_id}`, {
+            const response = await fetch(`https://todoappmoon.ru/v1/private/tasks/${task_id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ const TasksLine = ({ title, description, start_at, end_at, completed_at, task_id
 
     const handleDelete = async () => {
         try {
-            const response = await fetch(`http://localhost:8080/v1/private/tasks/${task_id}`, {
+            const response = await fetch(`https://todoappmoon.ru/v1/private/tasks/${task_id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ const TasksLine = ({ title, description, start_at, end_at, completed_at, task_id
 
     const handleEdit = async (formData) => {
         try {
-            const response = await fetch(`http://localhost:8080/v1/private/tasks/${task_id}`, {
+            const response = await fetch(`https://todoappmoon.ru/v1/private/tasks/${task_id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ const TasksLine = ({ title, description, start_at, end_at, completed_at, task_id
 
     const handleUpdateSubtask = async (formData) => {
         try {
-            const response = await fetch(`http://localhost:8080/v1/private/tasks/${editingSubtask.task_id}`, {
+            const response = await fetch(`https://todoappmoon.ru/v1/private/tasks/${editingSubtask.task_id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ const TasksLine = ({ title, description, start_at, end_at, completed_at, task_id
 
     const handleDeleteSubtask = async (subtaskId) => {
         try {
-            const response = await fetch(`http://localhost:8080/v1/private/tasks/${subtaskId}`, {
+            const response = await fetch(`https://todoappmoon.ru/v1/private/tasks/${subtaskId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ const TasksLine = ({ title, description, start_at, end_at, completed_at, task_id
     const toggleSubtaskStatus = async (subtaskId, currentCompletedAt) => {
         try {
             const newStatus = !currentCompletedAt;
-            const response = await fetch(`http://localhost:8080/v1/private/tasks/${subtaskId}`, {
+            const response = await fetch(`https://todoappmoon.ru/v1/private/tasks/${subtaskId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

@@ -11,7 +11,7 @@ const AuthForm = () => {
 
     const sendUser = async (userData) => {
         try {
-            const response = await fetch('http://localhost:8080/v1/auth/sign-in', {
+            const response = await fetch('https://todoappmoon.ru/v1/auth/sign-in', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

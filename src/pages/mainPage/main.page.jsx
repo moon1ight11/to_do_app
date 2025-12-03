@@ -17,7 +17,7 @@ const MainPage = () => {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`http://localhost:8080/v1/private/tasks`, {
+                const response = await fetch(`https://todoappmoon.ru/v1/private/tasks`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ const MainPage = () => {
     const handleLogout = async () => {
         if (window.confirm('Вы уверены, что хотите выйти из профиля?')) {
             try {
-                const response = await fetch('http://localhost:8080/v1/auth/sign-out', {
+                const response = await fetch('https://todoappmoon.ru/v1/auth/sign-out', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
