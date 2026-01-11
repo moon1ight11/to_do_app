@@ -32,7 +32,7 @@ func (u *UserService) CheckName(user_name string) (bool, error) {
 	}
 
 	return exist, nil
-}
+} 
 
 // проверка свободности почты
 func (u *UserService) CheckEmail(user_email string) (bool, error) {
@@ -150,3 +150,4 @@ func (u *UserService) DeleteUser(user_id uuid.UUID) error {
 
 	return nil
 }
+ 

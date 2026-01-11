@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-
 	"todoapp/internal/api"
 	"todoapp/internal/api/handlers"
 	"todoapp/internal/config"

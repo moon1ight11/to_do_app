@@ -42,7 +42,7 @@ func (db *Repo) UserByEmail(user_email string) (User, error) {
 	return user, nil
 }
 
-// проверка занятости имени пользователя
+// проверка занятости имени пользователя 
 func (db *Repo) CheckUserName(user_name string) (bool, error) {
 	query := `
 				SELECT EXISTS(
