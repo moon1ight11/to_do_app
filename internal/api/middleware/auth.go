@@ -1,11 +1,10 @@
 package middleware
 
 import (
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
-	"todoapp/internal/jwt"
-
-	"github.com/gin-gonic/gin"
+	"todoapp/internal/api/jwt"
 )
 
 func Auth(jwtService jwt.TokenService) gin.HandlerFunc {

@@ -3,16 +3,7 @@ package tasks
 import (
 	"github.com/google/uuid"
 	"time"
-	"todoapp/internal/storage"
 )
-
-type Repo struct {
-	storage.DataBase
-}
-
-func NewTasksRepo(db *storage.DataBase) *Repo {
-	return &Repo{DataBase: *db}
-}
 
 type Task struct {
 	Id           *uuid.UUID `json:"task_id"`

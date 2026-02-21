@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"regexp"
-	"todoapp/internal/jwt"
+	"todoapp/internal/api/jwt"
+	"todoapp/internal/api/models"
 	"todoapp/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type SettingsHandler struct {
@@ -63,11 +64,8 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
-
-	var UpdatedSettings struct {
-		Default_duration *float64 `json:"default_duration"`
-		Default_tz       *string  `json:"default_tz"`
-	}
+	
+	var UpdatedSettings models.UpdatedSettings
 
 	// получаем настройки с фронта
 	if err := c.ShouldBindJSON(&UpdatedSettings); err != nil {
@@ -87,7 +85,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 			return
 		}
 
-		// если нет - опрокидываем
+		// если нет - прокидываем
 		if !matched {
 			log.Println("Timezone not right")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Timezone not right"})

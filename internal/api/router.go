@@ -1,11 +1,10 @@
 package api
 
 import (
-	"todoapp/internal/api/handlers"
-	"todoapp/internal/jwt"
-	"todoapp/internal/middleware"
-
 	"github.com/gin-gonic/gin"
+	"todoapp/internal/api/handlers"
+	"todoapp/internal/api/jwt"
+	"todoapp/internal/api/middleware"
 )
 
 type Router struct {
@@ -42,7 +41,7 @@ func (r *Router) Run() error {
 
 func (r *Router) Init(jwtService jwt.TokenService) {
 	r.ginEngine.Use(middleware.CORS())
-	
+
 	// группировка роутов
 	privateGroup := r.ginEngine.Group("/v1/private")
 	authGroup := r.ginEngine.Group("/v1/auth")

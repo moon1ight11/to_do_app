@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"todoapp/internal/jwt"
+	"todoapp/internal/api/jwt"
 	"todoapp/internal/services"
 )
 

@@ -13,6 +13,7 @@ func (db *Repo) UpdateTZ(new_tz string, user_id uuid.UUID, tx *sql.Tx) error {
 				SET default_tz = $1
 				WHERE user_id = $2
 			`
+			
 	_, err := tx.Exec(query, new_tz, user_id)
 	if err != nil {
 		return fmt.Errorf("Error in UpdateTZ query: %w", err)

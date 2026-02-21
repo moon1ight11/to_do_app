@@ -13,9 +13,11 @@ func (db *Repo) SettingsById(user_id uuid.UUID) (Setting, error) {
 				WHERE user_id = $1
 			`
 	var setting Setting
+
 	err := db.DB.QueryRow(query, user_id).Scan(&setting.DefaultTz, &setting.DefaultDuration)
 	if err != nil {
 		return Setting{}, fmt.Errorf("Error in SettingsById query: %w", err)
 	}
+
 	return setting, nil
 }

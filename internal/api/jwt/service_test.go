@@ -1,10 +1,10 @@
 package jwt
 
 import (
-	"testing"
-	"time"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"testing"
+	"time"
 )
 
 // проверка правильной генерации токена
@@ -55,7 +55,7 @@ func TestParseToken(t *testing.T) {
 	}
 
 	// не совпал идентификатор
-	if claims.UserId != userId {
+	if claims.UserId != &userId {
 		t.Errorf("User id expected %v, got %v", userId, claims.UserId)
 	}
 
@@ -113,8 +113,10 @@ func TestTokenWithWrongExpTime(t *testing.T) {
 func TestTokenWithWrongMethod(t *testing.T) {
 	// создаем сервис, который использует HS256
 	service := NewJWTService("654321", time.Hour)
+	newUUID := uuid.New()
+
 	claims := Claims{
-		UserId:    uuid.New(),
+		UserId:    &newUUID,
 		UserName:  "Feda",
 		UserEmail: "Feda@gmail.com",
 		RegisteredClaims: jwt.RegisteredClaims{

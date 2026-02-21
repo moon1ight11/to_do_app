@@ -1,17 +1,8 @@
 package users
 
 import (
-	"todoapp/internal/storage"
 	"github.com/google/uuid"
 )
-
-type Repo struct {
-	storage.DataBase
-}
-
-func NewUserRepo(db *storage.DataBase) *Repo {
-    return &Repo{DataBase: *db}
-}
 
 type User struct {
 	Id    uuid.UUID `json:"user_id"`

@@ -5,7 +5,7 @@ import (
 	"todoapp/internal/api"
 	"todoapp/internal/api/handlers"
 	"todoapp/internal/config"
-	"todoapp/internal/jwt"
+	"todoapp/internal/api/jwt"
 	"todoapp/internal/services"
 	"todoapp/internal/storage"
 	"todoapp/internal/storage/repos/settings"

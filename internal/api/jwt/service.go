@@ -2,9 +2,11 @@ package jwt
 
 import (
 	"errors"
-	"time"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"regexp"
+	"time"
 )
 
 type Service struct {
@@ -19,10 +21,35 @@ func NewJWTService(secret string, expiration time.Duration) TokenService {
 	}
 }
 
+// валидация кастомных полей клеймов
+func (c *Claims) CustomFieldsValidate() error {
+	// проверяем валидность uuid
+	if c.UserId == nil {
+		return fmt.Errorf("User id is empty")
+	}
+
+	// проверяем, что имя пользователя не пустое
+	if c.UserName == "" {
+		return fmt.Errorf("Invalid user name")
+	}
+
+	// проверяем валидность почты
+	pattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
+	matched, err := regexp.MatchString(pattern, c.UserEmail)
+	if err != nil {
+		return fmt.Errorf("Error in matchString: %w", err)
+	}
+	if !matched {
+		return fmt.Errorf("User email not looks like email")
+	}
+
+	return nil
+}
+
 // создание токена
 func (j *Service) GenerateToken(user_id uuid.UUID, user_name string, user_email string) (string, error) {
 	claims := &Claims{
-		UserId:    user_id,
+		UserId:    &user_id,
 		UserName:  user_name,
 		UserEmail: user_email,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -48,4 +75,3 @@ func (j *Service) ParseToken(tokenString string, claims *Claims) (*jwt.Token, er
 		return j.secret, nil
 	})
 }
-

@@ -8,8 +8,7 @@ import (
 // отображение всех родительских задач пользователя
 func (db *Repo) TasksByOwnerId(owner_id uuid.UUID) ([]Task, error) {
 	query := `
-				SELECT id, title, description, start_at, end_at,
-				completed_at IS NOT NULL as completed
+				SELECT id, title, description, start_at, end_at, completed_at IS NOT NULL as completed
 				FROM todo_app.tasks
 				WHERE owner_id = $1 AND parent_task_id IS NULL
 				ORDER BY created_at DESC

@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"todoapp/internal/jwt"
+	"todoapp/internal/api/jwt"
 	"todoapp/internal/services"
 	"todoapp/internal/storage/repos/users"
 )
@@ -98,7 +98,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"user_id": user_id})
 }
 
-// логин
+// авторизация
 func (u *AuthHandler) SignIn(c *gin.Context) {
 	// получаем пользователя с фронта
 	var user users.User

@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Добавление пользователя в DB и возврат его id
+// Добавление пользователя
 func (db *Repo) CreateUser(NewUser User) (uuid.UUID, error) {
 	transaction, err := db.DB.Begin()
 	if err != nil {

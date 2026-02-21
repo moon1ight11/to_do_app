@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// удаление задачи\подзадачи
+// удаление задачи
 func (db *Repo) DeleteTask(task_id uuid.UUID, tx *sql.Tx) error {
 	query := `
 				DELETE FROM todo_app.tasks

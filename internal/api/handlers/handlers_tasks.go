@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"net/http"
-	"todoapp/internal/jwt"
+	"todoapp/internal/api/jwt"
 	"todoapp/internal/services"
 	"todoapp/internal/storage/repos/tasks"
 )
