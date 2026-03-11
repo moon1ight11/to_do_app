@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// jwt клеймы
 type Claims struct {
 	UserId    *uuid.UUID `json:"user_id"`
 	UserName  string     `json:"user_name"`

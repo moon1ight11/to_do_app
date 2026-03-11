@@ -6,7 +6,7 @@ import (
 )
 
 // Добавление пользователя
-func (db *Repo) CreateUser(NewUser User) (uuid.UUID, error) {
+func (db *Repo) CreateUser(name string, hashPass string, email string) (uuid.UUID, error) {
 	transaction, err := db.DB.Begin()
 	if err != nil {
 		return uuid.Nil, err
@@ -20,9 +20,9 @@ func (db *Repo) CreateUser(NewUser User) (uuid.UUID, error) {
 				RETURNING id
 			`
 
-	var user_id uuid.UUID
+	var userId uuid.UUID
 
-	err = transaction.QueryRow(query, NewUser.Name, NewUser.Pass, NewUser.Email).Scan(&user_id)
+	err = transaction.QueryRow(query, name, hashPass, email).Scan(&userId)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("Error in AddUser query: %w", err)
 	}
@@ -32,12 +32,12 @@ func (db *Repo) CreateUser(NewUser User) (uuid.UUID, error) {
     					VALUES ($1)
 					`
 
-	_, err = transaction.Exec(querySettings, user_id)
+	_, err = transaction.Exec(querySettings, userId)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("Error in AddSettings query: %w", err)
 	}
 
 	transaction.Commit()
 
-	return user_id, nil
+	return userId, nil
 }

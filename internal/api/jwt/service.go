@@ -9,11 +9,13 @@ import (
 	"time"
 )
 
+// сам jwt-сервис
 type Service struct {
 	secret     []byte
 	expiration time.Duration
 }
 
+// конструктор jwt-сервиса
 func NewJWTService(secret string, expiration time.Duration) TokenService {
 	return &Service{
 		secret:     []byte(secret),

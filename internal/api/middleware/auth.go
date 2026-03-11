@@ -7,6 +7,7 @@ import (
 	"todoapp/internal/api/jwt"
 )
 
+// мидлвар аутентификации
 func Auth(jwtService jwt.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer c.Next()

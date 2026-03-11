@@ -1,4 +1,4 @@
-package handlers
+package usershandlers
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,21 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"todoapp/internal/api/jwt"
-	"todoapp/internal/services"
 )
-
-type UserHandler struct {
-	userService *services.UserService
-	jwtService  jwt.TokenService
-}
-
-func NewUserHandler(userService *services.UserService, jwtService jwt.TokenService) *UserHandler {
-	return &UserHandler{
-		userService: userService,
-		jwtService:  jwtService,
-	}
-}
 
 // получение данных пользователя
 func (u *UserHandler) GetUser(c *gin.Context) {
