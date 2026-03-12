@@ -1,11 +1,15 @@
 package usershandlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"time"
 	"todoapp/internal/api/models"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // получение данных пользователя
@@ -24,9 +28,17 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем пользователя
-	user, err := u.userService.GetUser(userId)
+	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -61,9 +73,17 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// обновляем нужные поля
-	err := u.userService.UpdateUser(updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
+	err := u.userService.UpdateUser(ctx, updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -88,9 +108,17 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// удаляем пользователя
-	err := u.userService.DeleteUser(userId)
+	err := u.userService.DeleteUser(ctx, userId)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

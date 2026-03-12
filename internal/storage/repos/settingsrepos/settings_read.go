@@ -1,12 +1,13 @@
 package settingsrepos
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 )
 
 // получение настроек по id
-func (db *Repo) SettingsById(userId uuid.UUID) (Setting, error) {
+func (db *Repo) SettingsById(ctx context.Context, userId uuid.UUID) (Setting, error) {
 	query := `
 				SELECT default_tz, default_duration
 				FROM todo_app.settings
@@ -14,9 +15,9 @@ func (db *Repo) SettingsById(userId uuid.UUID) (Setting, error) {
 			`
 	var setting Setting
 
-	err := db.DB.QueryRow(query, userId).Scan(&setting.UserTz, &setting.TimeDuration)
+	err := db.DB.QueryRowContext(ctx, query, userId).Scan(&setting.UserTz, &setting.TimeDuration)
 	if err != nil {
-		return Setting{}, fmt.Errorf("Error in SettingsById query: %w", err)
+		return Setting{}, fmt.Errorf("error in SettingsById query: %w", err)
 	}
 
 	return setting, nil

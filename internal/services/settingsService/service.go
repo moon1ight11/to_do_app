@@ -1,6 +1,7 @@
 package settingsservice
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -10,9 +11,9 @@ import (
 )
 
 // получение настроек
-func (s *SettingsService) GetSettings(userId uuid.UUID) (models.Setting, error) {
+func (s *SettingsService) GetSettings(ctx context.Context, userId uuid.UUID) (models.Setting, error) {
 	// получаем настройки из репозитория
-	settings, err := s.settingsRepo.SettingsById(userId)
+	settings, err := s.settingsRepo.SettingsById(ctx, userId)
 	if err != nil {
 		return models.Setting{}, err
 	}
@@ -26,7 +27,7 @@ func (s *SettingsService) GetSettings(userId uuid.UUID) (models.Setting, error) 
 }
 
 // изменение настроек
-func (s *SettingsService) UpdateSettings(userId uuid.UUID, duration *float64, tz *string) error {
+func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, duration *float64, tz *string) error {
 	// если обновляется временная зона
 	if tz != nil {
 		// проверяем, похожа ли входящая строа на временную зону
@@ -45,7 +46,7 @@ func (s *SettingsService) UpdateSettings(userId uuid.UUID, duration *float64, tz
 	}
 
 	// открываем транзакцию
-	transaction, err := s.settingsRepo.DB.Begin()
+	transaction, err := s.settingsRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func (s *SettingsService) UpdateSettings(userId uuid.UUID, duration *float64, tz
 
 	// если меняем продолжительность
 	if duration != nil {
-		err := s.settingsRepo.UpdateDuration(*duration, userId, transaction)
+		err := s.settingsRepo.UpdateDuration(ctx, *duration, userId, transaction)
 		if err != nil {
 			return err
 		}
@@ -63,7 +64,7 @@ func (s *SettingsService) UpdateSettings(userId uuid.UUID, duration *float64, tz
 
 	// если меняем таймзону
 	if tz != nil {
-		err := s.settingsRepo.UpdateTZ(*tz, userId, transaction)
+		err := s.settingsRepo.UpdateTZ(ctx, *tz, userId, transaction)
 		if err != nil {
 			return err
 		}

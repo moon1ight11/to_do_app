@@ -1,12 +1,14 @@
 package tasksrepos
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
 // отображение всех родительских задач пользователя
-func (db *Repo) TasksByOwnerId(ownerId uuid.UUID) ([]Task, error) {
+func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, title, description, start_at, end_at, completed_at IS NOT NULL as completed
 				FROM todo_app.tasks
@@ -14,9 +16,9 @@ func (db *Repo) TasksByOwnerId(ownerId uuid.UUID) ([]Task, error) {
 				ORDER BY created_at DESC
 			`
 	var tasks []Task
-	rows, err := db.DB.Query(query, ownerId)
+	rows, err := db.DB.QueryContext(ctx, query, ownerId)
 	if err != nil {
-		return nil, fmt.Errorf("Error in ParentTasks query: %w", err)
+		return nil, fmt.Errorf("error in TasksByOwnerId query: %w", err)
 	}
 	defer rows.Close()
 
@@ -31,7 +33,7 @@ func (db *Repo) TasksByOwnerId(ownerId uuid.UUID) ([]Task, error) {
 			&task.CompletedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("Error in ParentTasks scan: %w", err)
+			return nil, fmt.Errorf("error in TasksByOwnerId scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
@@ -39,7 +41,7 @@ func (db *Repo) TasksByOwnerId(ownerId uuid.UUID) ([]Task, error) {
 }
 
 // отображение всех подзадач одной родительской задачи пользователя
-func (db *Repo) SubtasksByTaskId(ownerId uuid.UUID, parentId uuid.UUID) ([]Task, error) {
+func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentId uuid.UUID) ([]Task, error) {
 	query := `
 				SELECT id, parent_task_id, title, description, start_at, end_at,
 				completed_at IS NOT NULL as completed
@@ -48,9 +50,9 @@ func (db *Repo) SubtasksByTaskId(ownerId uuid.UUID, parentId uuid.UUID) ([]Task,
 				ORDER BY created_at DESC
 			`
 	var tasks []Task
-	rows, err := db.DB.Query(query, ownerId, parentId)
+	rows, err := db.DB.QueryContext(ctx, query, ownerId, parentId)
 	if err != nil {
-		return nil, fmt.Errorf("Error in Subtasks query: %w", err)
+		return nil, fmt.Errorf("error in SubtasksByTaskId query: %w", err)
 	}
 	defer rows.Close()
 
@@ -66,7 +68,7 @@ func (db *Repo) SubtasksByTaskId(ownerId uuid.UUID, parentId uuid.UUID) ([]Task,
 			&task.CompletedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("Error in Subtasks scan: %w", err)
+			return nil, fmt.Errorf("error in SubtasksByTaskId scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
@@ -74,7 +76,7 @@ func (db *Repo) SubtasksByTaskId(ownerId uuid.UUID, parentId uuid.UUID) ([]Task,
 }
 
 // поиск задачи по id
-func (db *Repo) TaskById(taskId uuid.UUID) (Task, error) {
+func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID) (Task, error) {
 	query := `
 				SELECT id, title, description, start_at, end_at, parent_task_id
 				FROM todo_app.tasks
@@ -82,10 +84,10 @@ func (db *Repo) TaskById(taskId uuid.UUID) (Task, error) {
 			`
 
 	var task Task
-	err := db.DB.QueryRow(query, taskId).Scan(&task.Id, &task.Title, &task.Description, &task.StartAt, &task.EndAt, &task.ParentId)
+	err := db.DB.QueryRowContext(ctx, query, taskId).Scan(&task.Id, &task.Title, &task.Description, &task.StartAt, &task.EndAt, &task.ParentId)
 
 	if err != nil {
-		return Task{}, fmt.Errorf("Task not found")
+		return Task{}, fmt.Errorf("error in TaskById query: %w", err)
 	}
 
 	return task, nil

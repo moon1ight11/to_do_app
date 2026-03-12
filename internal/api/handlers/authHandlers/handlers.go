@@ -1,10 +1,14 @@
 package authhandlers
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"time"
 	"todoapp/internal/api/models"
+
+	"github.com/gin-gonic/gin"
 )
 
 // регистрация
@@ -23,9 +27,17 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// добавляем пользователя в БД
-	userId, err := u.userService.AddUser(user)
+	userId, err := u.userService.AddUser(ctx, user)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -61,9 +73,17 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// поиск и проверка пользователя
-	foundUser, err := u.userService.CheckAndGetUser(user)
+	foundUser, err := u.userService.CheckAndGetUser(ctx, user)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

@@ -1,20 +1,20 @@
 package usersservice
 
 import (
+	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"regexp"
 	"strings"
 	"todoapp/internal/api/models"
-
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // добавление пользователя в БД
-func (u *UserService) AddUser(user models.UserAuth) (uuid.UUID, error) {
+func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.UUID, error) {
 	// проверка на уникальность имени и почты
-	exist, err := u.CheckNameAndEmail(user.Name, user.Email)
+	exist, err := u.CheckNameAndEmail(ctx, user.Name, user.Email)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -29,7 +29,7 @@ func (u *UserService) AddUser(user models.UserAuth) (uuid.UUID, error) {
 	}
 
 	// добавление в базу данных
-	userId, err := u.userRepo.CreateUser(user.Name, string(hashPass), user.Email)
+	userId, err := u.userRepo.CreateUser(ctx, user.Name, string(hashPass), user.Email)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -38,9 +38,9 @@ func (u *UserService) AddUser(user models.UserAuth) (uuid.UUID, error) {
 }
 
 // проверка и получение пользователя
-func (u *UserService) CheckAndGetUser(user models.UserAuth) (models.UserRequest, error) {
+func (u *UserService) CheckAndGetUser(ctx context.Context, user models.UserAuth) (models.UserRequest, error) {
 	// находим пользователя по почте
-	foundUser, err := u.userRepo.UserByEmail(user.Email)
+	foundUser, err := u.userRepo.UserByEmail(ctx, user.Email)
 	if err != nil {
 		return models.UserRequest{}, err
 	}
@@ -62,9 +62,9 @@ func (u *UserService) CheckAndGetUser(user models.UserAuth) (models.UserRequest,
 }
 
 // проверка свободности имени и почты
-func (u *UserService) CheckNameAndEmail(userName string, userEmail string) (bool, error) {
+func (u *UserService) CheckNameAndEmail(ctx context.Context, userName string, userEmail string) (bool, error) {
 	// проверяем имя
-	exist, err := u.userRepo.CheckUserName(userName)
+	exist, err := u.userRepo.CheckUserName(ctx, userName)
 	if err != nil {
 		return true, err
 	}
@@ -73,7 +73,7 @@ func (u *UserService) CheckNameAndEmail(userName string, userEmail string) (bool
 	}
 
 	// проверяем почту
-	exist, err = u.userRepo.CheckUserEmail(userEmail)
+	exist, err = u.userRepo.CheckUserEmail(ctx, userEmail)
 	if err != nil {
 		return true, err
 	}
@@ -82,9 +82,9 @@ func (u *UserService) CheckNameAndEmail(userName string, userEmail string) (bool
 }
 
 // получение данных пользователя
-func (u *UserService) GetUser(userId uuid.UUID) (models.UserRequest, error) {
+func (u *UserService) GetUser(ctx context.Context, userId uuid.UUID) (models.UserRequest, error) {
 	// запрашиваем пользователя в репозитории
-	user, err := u.userRepo.UserById(userId)
+	user, err := u.userRepo.UserById(ctx, userId)
 	if err != nil {
 		return models.UserRequest{}, err
 	}
@@ -99,7 +99,7 @@ func (u *UserService) GetUser(userId uuid.UUID) (models.UserRequest, error) {
 }
 
 // обновление полей пользователя
-func (u *UserService) UpdateUser(name *string, pass *string, email *string, userId uuid.UUID) error {
+func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string, email *string, userId uuid.UUID) error {
 	// если обновляется имя - чтобы было не пустое
 	if name != nil {
 		if strings.TrimSpace(*name) == "" {
@@ -134,7 +134,7 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 	}
 
 	// открываем транзакцию
-	transaction, err := u.userRepo.DB.Begin()
+	transaction, err := u.userRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 	// если меняем имя
 	if name != nil {
 		// проверяем, не занято ли новое имя
-		NameExist, err := u.userRepo.CheckUserName(*name)
+		NameExist, err := u.userRepo.CheckUserName(ctx, *name)
 		if err != nil {
 			return err
 		}
@@ -154,7 +154,7 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 		}
 
 		// если ок - меняем
-		err = u.userRepo.UpdateName(*name, userId, transaction)
+		err = u.userRepo.UpdateName(ctx, *name, userId, transaction)
 		if err != nil {
 			return err
 		}
@@ -169,7 +169,7 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 		}
 
 		// изменяем пароль
-		err = u.userRepo.UpdatePass(string(hashPass), userId, transaction)
+		err = u.userRepo.UpdatePass(ctx, string(hashPass), userId, transaction)
 		if err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 	// если меняем почту
 	if email != nil {
 		// проверяем, не занята ли новая почта
-		EmailExist, err := u.userRepo.CheckUserEmail(*email)
+		EmailExist, err := u.userRepo.CheckUserEmail(ctx, *email)
 		if err != nil {
 			return err
 		}
@@ -187,7 +187,7 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 		}
 
 		// если ок - меняем
-		err = u.userRepo.UpdateEmail(*email, userId, transaction)
+		err = u.userRepo.UpdateEmail(ctx, *email, userId, transaction)
 		if err != nil {
 			return err
 		}
@@ -203,8 +203,8 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 }
 
 // удаление пользователя
-func (u *UserService) DeleteUser(userId uuid.UUID) error {
-	err := u.userRepo.DeleteUser(userId)
+func (u *UserService) DeleteUser(ctx context.Context, userId uuid.UUID) error {
+	err := u.userRepo.DeleteUser(ctx, userId)
 	if err != nil {
 		return err
 	}

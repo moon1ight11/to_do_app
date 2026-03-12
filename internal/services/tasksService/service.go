@@ -1,19 +1,21 @@
 package tasksservice
 
 import (
+	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
 	"todoapp/internal/api/models"
 	"todoapp/internal/storage/repos/tasksrepos"
+
+	"github.com/google/uuid"
 )
 
 // создание задачи
-func (t *TasksService) CreateTask(task models.Task) error {
+func (t *TasksService) CreateTask(ctx context.Context, task models.Task) error {
 	// если есть временные рамки - время на выполнение не должно быть отрицательным
 	if task.StartAt != nil && task.EndAt != nil {
 		if task.EndAt.Before(*task.StartAt) {
-			return fmt.Errorf("End_at cannot be before start_at")
+			return fmt.Errorf("error in CreateTask: end_at cannot be before start_at")
 		}
 	}
 
@@ -21,7 +23,7 @@ func (t *TasksService) CreateTask(task models.Task) error {
 	taskrepo := taskFromApiToRepo(&task)
 
 	// добавляем задачу в репозиторий
-	err := t.tasksRepo.CreateTask(*taskrepo)
+	err := t.tasksRepo.CreateTask(ctx, *taskrepo)
 	if err != nil {
 		return err
 	}
@@ -30,9 +32,9 @@ func (t *TasksService) CreateTask(task models.Task) error {
 }
 
 // получение списка всех задач пользователя
-func (t *TasksService) GetAllTasks(userId uuid.UUID) ([]models.Task, error) {
+func (t *TasksService) GetAllTasks(ctx context.Context, userId uuid.UUID) ([]models.Task, error) {
 	// получаем список всех задач пользователя
-	tasks, err := t.tasksRepo.TasksByOwnerId(userId)
+	tasks, err := t.tasksRepo.TasksByOwnerId(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +42,7 @@ func (t *TasksService) GetAllTasks(userId uuid.UUID) ([]models.Task, error) {
 	// рекурсивно загружаем подзадачи для каждой родительской задачи
 	var tasksApi []models.Task
 	for i := range tasks {
-		taskApi := t.buildTaskWithSubtasks(&tasks[i], userId)
+		taskApi := t.buildTaskWithSubtasks(ctx, &tasks[i], userId)
 		tasksApi = append(tasksApi, taskApi)
 	}
 
@@ -48,9 +50,9 @@ func (t *TasksService) GetAllTasks(userId uuid.UUID) ([]models.Task, error) {
 }
 
 // получение одной задачи
-func (t *TasksService) GetOneTask(taskId uuid.UUID) (models.Task, error) {
+func (t *TasksService) GetOneTask(ctx context.Context, taskId uuid.UUID) (models.Task, error) {
 	// получаем задачу
-	task, err := t.tasksRepo.TaskById(taskId)
+	task, err := t.tasksRepo.TaskById(ctx, taskId)
 	if err != nil {
 		return models.Task{}, err
 	}
@@ -60,13 +62,14 @@ func (t *TasksService) GetOneTask(taskId uuid.UUID) (models.Task, error) {
 		return models.Task{}, err
 	}
 
-	taskApi := t.buildTaskWithSubtasks(&task, ownerId)
+	taskApi := t.buildTaskWithSubtasks(ctx, &task, ownerId)
 
 	return taskApi, nil
 }
 
 // изменение полей задачи
 func (t *TasksService) ChangeTask(
+	ctx context.Context,
 	taskId uuid.UUID,
 	title *string,
 	description *string,
@@ -75,7 +78,7 @@ func (t *TasksService) ChangeTask(
 	completedAt *bool,
 ) error {
 	// запускаем транзакцию
-	transaction, err := t.tasksRepo.DB.Begin()
+	transaction, err := t.tasksRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -84,7 +87,7 @@ func (t *TasksService) ChangeTask(
 	defer transaction.Rollback()
 
 	// находим задачу, которую нужно изменить
-	foundTask, err := t.tasksRepo.TaskById(taskId)
+	foundTask, err := t.tasksRepo.TaskById(ctx, taskId)
 	if err != nil {
 		return err
 	}
@@ -113,7 +116,7 @@ func (t *TasksService) ChangeTask(
 
 	// меняем название
 	if title != nil {
-		err := t.tasksRepo.UpdateTitle(taskId, *title, transaction)
+		err := t.tasksRepo.UpdateTitle(ctx, taskId, *title, transaction)
 		if err != nil {
 			return err
 		}
@@ -121,7 +124,7 @@ func (t *TasksService) ChangeTask(
 
 	// меняем описание
 	if description != nil {
-		err := t.tasksRepo.UpdateDescription(taskId, *description, transaction)
+		err := t.tasksRepo.UpdateDescription(ctx, taskId, *description, transaction)
 		if err != nil {
 			return err
 		}
@@ -129,7 +132,7 @@ func (t *TasksService) ChangeTask(
 
 	// меняем время начала
 	if startAt != nil {
-		err := t.tasksRepo.UpdateStartAt(taskId, *startAt, transaction)
+		err := t.tasksRepo.UpdateStartAt(ctx, taskId, *startAt, transaction)
 		if err != nil {
 			return err
 		}
@@ -137,7 +140,7 @@ func (t *TasksService) ChangeTask(
 
 	// меняем время завершения
 	if endAt != nil {
-		err := t.tasksRepo.UpdateEndAt(taskId, *endAt, transaction)
+		err := t.tasksRepo.UpdateEndAt(ctx, taskId, *endAt, transaction)
 		if err != nil {
 			return err
 		}
@@ -146,12 +149,12 @@ func (t *TasksService) ChangeTask(
 	// меняем статус задачи
 	if completedAt != nil {
 		if *completedAt == false {
-			err := t.tasksRepo.TaskUncompleted(taskId, transaction)
+			err := t.tasksRepo.TaskUncompleted(ctx, taskId, transaction)
 			if err != nil {
 				return err
 			}
 		} else if *completedAt == true {
-			err := t.tasksRepo.TaskCompleted(taskId, transaction)
+			err := t.tasksRepo.TaskCompleted(ctx, taskId, transaction)
 			if err != nil {
 				return err
 			}
@@ -168,9 +171,9 @@ func (t *TasksService) ChangeTask(
 }
 
 // удаление задачи
-func (t *TasksService) DeleteTask(taskId uuid.UUID) error {
+func (t *TasksService) DeleteTask(ctx context.Context, taskId uuid.UUID) error {
 	// запускаем транзакцию
-	transaction, err := t.tasksRepo.DB.Begin()
+	transaction, err := t.tasksRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -179,13 +182,13 @@ func (t *TasksService) DeleteTask(taskId uuid.UUID) error {
 	defer transaction.Rollback()
 
 	// ищем задачу по id
-	deletedTask, err := t.tasksRepo.TaskById(taskId)
+	deletedTask, err := t.tasksRepo.TaskById(ctx, taskId)
 	if err != nil {
 		return err
 	}
 
 	// удаляем задачу с подзадачами
-	err = t.tasksRepo.DeleteTask(*deletedTask.Id, transaction)
+	err = t.tasksRepo.DeleteTask(ctx, *deletedTask.Id, transaction)
 	if err != nil {
 		return err
 	}
@@ -255,9 +258,9 @@ func taskFromRepoToApi(repoTask *tasksrepos.Task) models.Task {
 }
 
 // конструктор для рекурсии подзадач
-func (t *TasksService) buildTaskWithSubtasks(task *tasksrepos.Task, userId uuid.UUID) models.Task {
+func (t *TasksService) buildTaskWithSubtasks(ctx context.Context, task *tasksrepos.Task, userId uuid.UUID) models.Task {
 	// получаем прямые подзадачи текущей задачи
-	subtasks, err := t.tasksRepo.SubtasksByTaskId(userId, *task.Id)
+	subtasks, err := t.tasksRepo.SubtasksByTaskId(ctx, userId, *task.Id)
 	if err != nil {
 		return taskFromRepoToApi(task)
 	}
@@ -265,13 +268,13 @@ func (t *TasksService) buildTaskWithSubtasks(task *tasksrepos.Task, userId uuid.
 	// рекурсивно загружаем подзадачи для каждой подзадачи
 	var subtasksApi []models.Task
 	for i := range subtasks {
-		subtaskApi := t.buildTaskWithSubtasks(&subtasks[i], userId)
+		subtaskApi := t.buildTaskWithSubtasks(ctx, &subtasks[i], userId)
 		subtasksApi = append(subtasksApi, subtaskApi)
 	}
 
 	// конвертируем основную задачу
 	taskApi := taskFromRepoToApi(task)
-	
+
 	// добавляем подзадачи
 	if len(subtasksApi) > 0 {
 		taskApi.Subtasks = &subtasksApi

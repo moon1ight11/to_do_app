@@ -1,11 +1,15 @@
 package settingshandlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"time"
 	"todoapp/internal/api/models"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // получение настроек пользователя
@@ -24,9 +28,17 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// находим настройки по id
-	settings, err := s.settingsService.GetSettings(userId)
+	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -60,9 +72,17 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// изменяем настройки
-	err := s.settingsService.UpdateSettings(userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
+	err := s.settingsService.UpdateSettings(ctx, userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -1,13 +1,14 @@
 package usersrepos
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 )
 
 // Добавление пользователя
-func (db *Repo) CreateUser(name string, hashPass string, email string) (uuid.UUID, error) {
-	transaction, err := db.DB.Begin()
+func (db *Repo) CreateUser(ctx context.Context, name string, hashPass string, email string) (uuid.UUID, error) {
+	transaction, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -22,9 +23,9 @@ func (db *Repo) CreateUser(name string, hashPass string, email string) (uuid.UUI
 
 	var userId uuid.UUID
 
-	err = transaction.QueryRow(query, name, hashPass, email).Scan(&userId)
+	err = transaction.QueryRowContext(ctx, query, name, hashPass, email).Scan(&userId)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Error in AddUser query: %w", err)
+		return uuid.Nil, fmt.Errorf("error in AddUser query: %w", err)
 	}
 
 	querySettings := `
@@ -32,7 +33,7 @@ func (db *Repo) CreateUser(name string, hashPass string, email string) (uuid.UUI
     					VALUES ($1)
 					`
 
-	_, err = transaction.Exec(querySettings, userId)
+	_, err = transaction.ExecContext(ctx, querySettings, userId)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("Error in AddSettings query: %w", err)
 	}

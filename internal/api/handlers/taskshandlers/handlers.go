@@ -1,8 +1,11 @@
 package taskshandlers
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"time"
 	"todoapp/internal/api/models"
 
 	"github.com/gin-gonic/gin"
@@ -37,9 +40,17 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// устанавливаем ownerId
 	task.OwnerId = userId
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// добавляем задачу
-	err := t.taskService.CreateTask(task)
+	err := t.taskService.CreateTask(ctx, task)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -64,9 +75,17 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем задачи
-	tasks, err := t.taskService.GetAllTasks(userId)
+	tasks, err := t.taskService.GetAllTasks(ctx, userId)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -86,9 +105,17 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем задачу
-	task, err := t.taskService.GetOneTask(taskId)
+	task, err := t.taskService.GetOneTask(ctx, taskId)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -119,8 +146,13 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// указываем, какая задача должна быть изменена
 	updatedTask.Id = &taskId
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// меняем необходимые поля
 	err = t.taskService.ChangeTask(
+		ctx,
 		*updatedTask.Id,
 		updatedTask.Title,
 		updatedTask.Description,
@@ -129,6 +161,10 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 		updatedTask.CompletedAt,
 	)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -148,9 +184,17 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 		return
 	}
 
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// процесс удаления задачи и ее подзадач
-	err = t.taskService.DeleteTask(taskId)
+	err = t.taskService.DeleteTask(ctx, taskId)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+            c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
+            return
+        }
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
