@@ -49,11 +49,11 @@ func (c *Claims) CustomFieldsValidate() error {
 }
 
 // создание токена
-func (j *Service) GenerateToken(user_id uuid.UUID, user_name string, user_email string) (string, error) {
+func (j *Service) GenerateToken(userId uuid.UUID, name string, email string) (string, error) {
 	claims := &Claims{
-		UserId:    &user_id,
-		UserName:  user_name,
-		UserEmail: user_email,
+		UserId:    &userId,
+		UserName:  name,
+		UserEmail: email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
 		},

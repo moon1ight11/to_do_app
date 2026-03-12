@@ -1,11 +1,12 @@
 package taskshandlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"todoapp/internal/api/models"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // создание задачи
@@ -29,22 +30,22 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// получаем задачу с фронта
 	if err := c.ShouldBindJSON(&task); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// устанавливаем owner_id
+	// устанавливаем ownerId
 	task.OwnerId = userId
 
 	// добавляем задачу
 	err := t.taskService.CreateTask(task)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"message": "sucessful"})
+	c.JSON(http.StatusOK, gin.H{"message": "sucessful"})
 }
 
 // получение списка задач пользователя
@@ -63,14 +64,15 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 		return
 	}
 
+	// получаем задачи
 	tasks, err := t.taskService.GetAllTasks(userId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"tasks": tasks})
+	c.JSON(http.StatusOK, gin.H{"tasks": tasks})
 }
 
 // получение одной задачи по id
@@ -80,18 +82,19 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Println("Error in parse uuid", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// получаем задачу
 	task, err := t.taskService.GetOneTask(taskId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"task": task})
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 // изменение полей задач
@@ -100,7 +103,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// получаем измененную задачу с фронта
 	if err := c.ShouldBindJSON(&updatedTask); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -109,7 +112,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Println("Error in parse uuid", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -125,14 +128,13 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 		updatedTask.EndAt,
 		updatedTask.CompletedAt,
 	)
-
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"message": "Task updated succesfull"})
+	c.JSON(http.StatusOK, gin.H{"message": "Task updated succesfull"})
 }
 
 // удаление задачи
@@ -142,7 +144,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Println("Error in parse uuid", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -150,9 +152,9 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	err = t.taskService.DeleteTask(taskId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"message": "sucessful"})
+	c.JSON(http.StatusOK, gin.H{"message": "sucessful"})
 }

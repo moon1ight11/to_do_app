@@ -43,16 +43,16 @@ func main() {
 	// инициализация зависимостей
 	userRepo := usersrepos.NewUserRepo(db)
 	userService := usersservice.NewUserService(userRepo)
-	userHandler := usershandlers.NewUserHandler(userService, jwtService)
+	userHandler := usershandlers.NewUserHandler(userService)
 	authHandler := authhandlers.NewAuthHandler(userService, jwtService)
 
 	settingsRepo := settingsrepos.NewSettingsRepo(db)
 	settingsService := settingsservice.NewSettingsService(settingsRepo)
-	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, jwtService)
+	settingsHandler := settingshandlers.NewSettingsHandler(settingsService)
 
 	tasksRepo := tasksrepos.NewTasksRepo(db)
 	tasksService := tasksservice.NewTasksService(tasksRepo)
-	tasksHandler := taskshandlers.NewTasksHandler(tasksService, jwtService)
+	tasksHandler := taskshandlers.NewTasksHandler(tasksService)
 
 	// инициализация роутера
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)

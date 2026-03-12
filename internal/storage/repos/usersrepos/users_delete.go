@@ -6,7 +6,7 @@ import (
 )
 
 // удаление пользователя по id
-func (db *Repo) DeleteUser(user_id uuid.UUID) error {
+func (db *Repo) DeleteUser(userId uuid.UUID) error {
 	transaction, err := db.DB.Begin()
 	if err != nil {
 		return err
@@ -18,7 +18,7 @@ func (db *Repo) DeleteUser(user_id uuid.UUID) error {
 					DELETE FROM todo_app.settings
 					WHERE user_id = $1
 					`
-	_, err = transaction.Exec(querySettings, user_id)
+	_, err = transaction.Exec(querySettings, userId)
 	if err != nil {
 		return fmt.Errorf("Error in DeleteUser query: %w", err)
 	}
@@ -27,12 +27,15 @@ func (db *Repo) DeleteUser(user_id uuid.UUID) error {
 				DELETE FROM todo_app.users
 				WHERE id = $1
 			`
-	_, err = transaction.Exec(query, user_id)
+	_, err = transaction.Exec(query, userId)
 	if err != nil {
 		return fmt.Errorf("Error in DeleteUser query: %w", err)
 	}
 
-	transaction.Commit()
+	err = transaction.Commit()
+	if err != nil {
+		return fmt.Errorf("error in delete user commit: %w", err)
+	}
 	
 	return nil
 }

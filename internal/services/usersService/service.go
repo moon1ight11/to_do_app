@@ -2,9 +2,13 @@ package usersservice
 
 import (
 	"fmt"
+	"log"
+	"regexp"
+	"strings"
+	"todoapp/internal/api/models"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"todoapp/internal/api/models"
 )
 
 // добавление пользователя в БД
@@ -25,12 +29,12 @@ func (u *UserService) AddUser(user models.UserAuth) (uuid.UUID, error) {
 	}
 
 	// добавление в базу данных
-	user_id, err := u.userRepo.CreateUser(user.Name, string(hashPass), user.Email)
+	userId, err := u.userRepo.CreateUser(user.Name, string(hashPass), user.Email)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	return user_id, nil
+	return userId, nil
 }
 
 // проверка и получение пользователя
@@ -96,6 +100,39 @@ func (u *UserService) GetUser(userId uuid.UUID) (models.UserRequest, error) {
 
 // обновление полей пользователя
 func (u *UserService) UpdateUser(name *string, pass *string, email *string, userId uuid.UUID) error {
+	// если обновляется имя - чтобы было не пустое
+	if name != nil {
+		if strings.TrimSpace(*name) == "" {
+			log.Println("New name is empty")
+			return fmt.Errorf("new name is empty")
+		}
+	}
+
+	// если обновляется пароль - чтобы не был пустым
+	if pass != nil {
+		if strings.TrimSpace(*pass) == "" {
+			log.Println("New pass is empty")
+			return fmt.Errorf("new pass is empty")
+		}
+	}
+
+	// если обновляется почта
+	if email != nil {
+		// проверяем, похожа ли новая почта на почту
+		pattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
+		matched, err := regexp.MatchString(pattern, *email)
+		if err != nil {
+			log.Println("Error in MatchString", err)
+			return fmt.Errorf("error in check email: %w", err)
+		}
+
+		// если нет - отклоняем
+		if !matched {
+			log.Println("New email not looks like email")
+			return fmt.Errorf("new email not looks like email")
+		}
+	}
+
 	// открываем транзакцию
 	transaction, err := u.userRepo.DB.Begin()
 	if err != nil {
@@ -157,19 +194,12 @@ func (u *UserService) UpdateUser(name *string, pass *string, email *string, user
 	}
 
 	// если все ок - подтверждаем транзакцию
-	transaction.Commit()
-	return nil
-}
-
-// проверка существования пользователя по id
-func (u *UserService) CheckUserByID(userId uuid.UUID) (bool, error) {
-	// получаем пользователя по id
-	_, err := u.userRepo.UserById(userId)
+	err = transaction.Commit()
 	if err != nil {
-		return false, err
+		return fmt.Errorf("error in update user commit: %w", err)
 	}
 
-	return true, nil
+	return nil
 }
 
 // удаление пользователя

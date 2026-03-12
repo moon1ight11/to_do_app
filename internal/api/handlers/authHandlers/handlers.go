@@ -13,7 +13,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	var user models.UserAuth
 	if err := c.ShouldBindJSON(&user); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -27,7 +27,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	userId, err := u.userService.AddUser(user)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -35,7 +35,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	token, err := u.jwtService.GenerateToken(userId, user.Name, user.Email)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -51,7 +51,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	var user models.UserAuth
 	if err := c.ShouldBindJSON(&user); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -65,7 +65,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	foundUser, err := u.userService.CheckAndGetUser(user)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusUnauthorized), gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -73,7 +73,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	token, err := u.jwtService.GenerateToken(foundUser.Id, foundUser.Name, foundUser.Email)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

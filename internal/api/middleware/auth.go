@@ -15,7 +15,7 @@ func Auth(jwtService jwt.TokenService) gin.HandlerFunc {
 		value, err := c.Cookie("cookie")
 		if err != nil {
 			log.Println("Error in get value from cookie")
-			c.JSON((http.StatusForbidden), gin.H{"error": err.Error()})
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}

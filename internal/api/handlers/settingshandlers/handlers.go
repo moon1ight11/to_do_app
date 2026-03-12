@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"net/http"
-	"regexp"
 	"todoapp/internal/api/models"
 )
 
@@ -29,11 +28,11 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 	settings, err := s.settingsService.GetSettings(userId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"settings": settings})
+	c.JSON(http.StatusOK, gin.H{"settings": settings})
 }
 
 // изменение настроек пользователя
@@ -57,36 +56,17 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// получаем настройки с фронта
 	if err := c.ShouldBindJSON(&updatedSettings); err != nil {
 		log.Println("Error in ShouldBindJSON")
-		c.JSON((http.StatusBadRequest), gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-
-	// если обновляется временная зона
-	if updatedSettings.UserTz != nil {
-		// проверяем, похожа ли входящая строа на временную зону
-		pattern := `^UTC([+-](?:1[0-4]|[0-9])(?::?[0-5][0-9])?)?$`
-		matched, err := regexp.MatchString(pattern, *updatedSettings.UserTz)
-		if err != nil {
-			log.Println("Error in MatchString", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err})
-			return
-		}
-
-		// если нет - прокидываем
-		if !matched {
-			log.Println("Timezone not right")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Timezone not right"})
-			return
-		}
 	}
 
 	// изменяем настройки
 	err := s.settingsService.UpdateSettings(userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"updated_settings": updatedSettings})
+	c.JSON(http.StatusOK, gin.H{"updated_settings": updatedSettings})
 }

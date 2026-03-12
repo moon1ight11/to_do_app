@@ -7,13 +7,13 @@ import (
 )
 
 // обновление имени
-func (db *Repo) UpdateName (newName string, user_id uuid.UUID, tx *sql.Tx) error {
+func (db *Repo) UpdateName (name string, userId uuid.UUID, tx *sql.Tx) error {
 	query := `
 				UPDATE todo_app.users
 				SET name = $1, updated_at = NOW()
 				WHERE id = $2
 			`
-	_, err := tx.Exec(query, newName, user_id)
+	_, err := tx.Exec(query, name, userId)
 	if err != nil {
 		return fmt.Errorf("Error in UpdateName query: %w", err)
 	}
@@ -22,13 +22,13 @@ func (db *Repo) UpdateName (newName string, user_id uuid.UUID, tx *sql.Tx) error
 }
 
 // обновление пароля
-func (db *Repo) UpdatePass (newPass string, user_id uuid.UUID, tx *sql.Tx) error {
+func (db *Repo) UpdatePass (pass string, userId uuid.UUID, tx *sql.Tx) error {
 	query := `
 				UPDATE todo_app.users
 				SET pass = $1, updated_at = NOW()
 				WHERE id = $2
 			`
-	_, err := tx.Exec(query, newPass, user_id)
+	_, err := tx.Exec(query, pass, userId)
 	if err != nil {
 		return fmt.Errorf("Error in UpdatePass query: %w", err)
 	}
@@ -36,13 +36,13 @@ func (db *Repo) UpdatePass (newPass string, user_id uuid.UUID, tx *sql.Tx) error
 }
 
 // обновление почты
-func (db *Repo) UpdateEmail (newEmail string, user_id uuid.UUID, tx *sql.Tx) error {
+func (db *Repo) UpdateEmail (email string, userId uuid.UUID, tx *sql.Tx) error {
 	query := `
 				UPDATE todo_app.users
 				SET email = $1, updated_at = NOW()
 				WHERE id = $2
 			`
-	_, err := tx.Exec(query, newEmail, user_id)
+	_, err := tx.Exec(query, email, userId)
 	if err != nil {
 		return fmt.Errorf("Error in UpdateEmail query: %w", err)
 	}

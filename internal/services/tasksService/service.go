@@ -30,34 +30,39 @@ func (t *TasksService) CreateTask(task models.Task) error {
 }
 
 // получение списка всех задач пользователя
-func (t *TasksService) GetAllTasks(userId uuid.UUID) ([]tasksrepos.Task, error) {
+func (t *TasksService) GetAllTasks(userId uuid.UUID) ([]models.Task, error) {
 	// получаем список всех задач пользователя
 	tasks, err := t.tasksRepo.TasksByOwnerId(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	// среди них ищем подзадачи
+	// рекурсивно загружаем подзадачи для каждой родительской задачи
+	var tasksApi []models.Task
 	for i := range tasks {
-		subtasks, err := t.tasksRepo.SubtasksByTaskId(userId, *tasks[i].Id)
-		if err != nil {
-			return nil, err
-		}
-
-		tasks[i].Subtasks = &subtasks
+		taskApi := t.buildTaskWithSubtasks(&tasks[i], userId)
+		tasksApi = append(tasksApi, taskApi)
 	}
 
-	return tasks, err
+	return tasksApi, nil
 }
 
 // получение одной задачи
-func (t *TasksService) GetOneTask(taskId uuid.UUID) (tasksrepos.Task, error) {
+func (t *TasksService) GetOneTask(taskId uuid.UUID) (models.Task, error) {
+	// получаем задачу
 	task, err := t.tasksRepo.TaskById(taskId)
 	if err != nil {
-		return tasksrepos.Task{}, err
+		return models.Task{}, err
 	}
 
-	return task, nil
+	ownerId := task.OwnerId
+	if ownerId == uuid.Nil {
+		return models.Task{}, err
+	}
+
+	taskApi := t.buildTaskWithSubtasks(&task, ownerId)
+
+	return taskApi, nil
 }
 
 // изменение полей задачи
@@ -154,12 +159,16 @@ func (t *TasksService) ChangeTask(
 	}
 
 	// если ошибок нет - подтверждаем транзакцию
-	transaction.Commit()
+	err = transaction.Commit()
+	if err != nil {
+		return fmt.Errorf("error in change task commit: %w", err)
+	}
+
 	return nil
 }
 
 // удаление задачи
-func (t *TasksService) DeleteTask(task_id uuid.UUID) error {
+func (t *TasksService) DeleteTask(taskId uuid.UUID) error {
 	// запускаем транзакцию
 	transaction, err := t.tasksRepo.DB.Begin()
 	if err != nil {
@@ -170,19 +179,22 @@ func (t *TasksService) DeleteTask(task_id uuid.UUID) error {
 	defer transaction.Rollback()
 
 	// ищем задачу по id
-	DeletedTask, err := t.tasksRepo.TaskById(task_id)
+	deletedTask, err := t.tasksRepo.TaskById(taskId)
 	if err != nil {
 		return err
 	}
 
 	// удаляем задачу с подзадачами
-	err = t.tasksRepo.DeleteTask(*DeletedTask.Id, transaction)
+	err = t.tasksRepo.DeleteTask(*deletedTask.Id, transaction)
 	if err != nil {
 		return err
 	}
 
 	// если ошибок нет - подтверждаем транзакцию
-	transaction.Commit()
+	err = transaction.Commit()
+	if err != nil {
+		return fmt.Errorf("error in delete task commit: %w", err)
+	}
 	return nil
 }
 
@@ -212,4 +224,58 @@ func taskFromApiToRepo(modelTask *models.Task) *tasksrepos.Task {
 		CompletedAt: modelTask.CompletedAt,
 		Subtasks:    subtasks,
 	}
+}
+
+// перевод типа из репо в апи
+func taskFromRepoToApi(repoTask *tasksrepos.Task) models.Task {
+	if repoTask == nil {
+		return models.Task{}
+	}
+
+	var subtasks *[]models.Task
+	if repoTask.Subtasks != nil {
+		mappedSubtasks := make([]models.Task, len(*repoTask.Subtasks))
+		for i, t := range *repoTask.Subtasks {
+			mappedSubtasks[i] = taskFromRepoToApi(&t)
+		}
+		subtasks = &mappedSubtasks
+	}
+
+	return models.Task{
+		Id:          repoTask.Id,
+		ParentId:    repoTask.ParentId,
+		OwnerId:     repoTask.OwnerId,
+		StartAt:     repoTask.StartAt,
+		EndAt:       repoTask.EndAt,
+		Title:       repoTask.Title,
+		Description: repoTask.Description,
+		CompletedAt: repoTask.CompletedAt,
+		Subtasks:    subtasks,
+	}
+}
+
+// конструктор для рекурсии подзадач
+func (t *TasksService) buildTaskWithSubtasks(task *tasksrepos.Task, userId uuid.UUID) models.Task {
+	// получаем прямые подзадачи текущей задачи
+	subtasks, err := t.tasksRepo.SubtasksByTaskId(userId, *task.Id)
+	if err != nil {
+		return taskFromRepoToApi(task)
+	}
+
+	// рекурсивно загружаем подзадачи для каждой подзадачи
+	var subtasksApi []models.Task
+	for i := range subtasks {
+		subtaskApi := t.buildTaskWithSubtasks(&subtasks[i], userId)
+		subtasksApi = append(subtasksApi, subtaskApi)
+	}
+
+	// конвертируем основную задачу
+	taskApi := taskFromRepoToApi(task)
+	
+	// добавляем подзадачи
+	if len(subtasksApi) > 0 {
+		taskApi.Subtasks = &subtasksApi
+	}
+
+	return taskApi
 }

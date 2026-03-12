@@ -37,7 +37,10 @@ func (db *Repo) CreateUser(name string, hashPass string, email string) (uuid.UUI
 		return uuid.Nil, fmt.Errorf("Error in AddSettings query: %w", err)
 	}
 
-	transaction.Commit()
+	err = transaction.Commit()
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("error in create user commit: %w", err)
+	}
 
 	return userId, nil
 }

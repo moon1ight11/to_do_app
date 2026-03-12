@@ -5,8 +5,6 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"net/http"
-	"regexp"
-	"strings"
 	"todoapp/internal/api/models"
 )
 
@@ -30,11 +28,11 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 	user, err := u.userService.GetUser(userId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"user": user})
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
 // обновление параметров пользователя
@@ -59,56 +57,19 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&updatedUser); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-
-	// если обновляется имя - чтобы было не пустое
-	if updatedUser.Name != nil {
-		if strings.TrimSpace(*updatedUser.Name) == "" {
-			log.Println("New name is empty")
-			c.JSON((http.StatusBadRequest), gin.H{"error": "New name is empty"})
-			return
-		}
-	}
-
-	// если обновляется пароль - чтобы не был пустым
-	if updatedUser.Pass != nil {
-		if strings.TrimSpace(*updatedUser.Pass) == "" {
-			log.Println("New pass is empty")
-			c.JSON((http.StatusBadRequest), gin.H{"error": "New pass is empty"})
-			return
-		}
-	}
-
-	// если обновляется почта
-	if updatedUser.Email != nil {
-		// проверяем, похожа ли новая почта на почту
-		pattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
-		matched, err := regexp.MatchString(pattern, *updatedUser.Email)
-		if err != nil {
-			log.Println("Error in MatchString", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// если нет - отклоняем
-		if !matched {
-			log.Println("New email not looks like email")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "New email not looks like email"})
-			return
-		}
 	}
 
 	// обновляем нужные поля
 	err := u.userService.UpdateUser(updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"UpdatedUser": updatedUser})
+	c.JSON(http.StatusOK, gin.H{"updatedUser": updatedUser})
 }
 
 // удаление пользователя
@@ -121,25 +82,17 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	// приводим значение к uuid
-	UserId, ok := userIDValue.(uuid.UUID)
+	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
 
-	// проверяем существование пользователя
-	_, err := u.userService.CheckUserByID(UserId)
-	if err != nil {
-		log.Println(err)
-		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
-		return
-	}
-
 	// удаляем пользователя
-	err = u.userService.DeleteUser(UserId)
+	err := u.userService.DeleteUser(userId)
 	if err != nil {
 		log.Println(err)
-		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
