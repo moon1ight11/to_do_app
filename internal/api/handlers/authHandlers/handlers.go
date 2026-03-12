@@ -24,7 +24,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	}
 
 	// добавляем пользователя в БД
-	user_id, err := u.userService.AddUser(user)
+	userId, err := u.userService.AddUser(user)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
@@ -32,7 +32,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	}
 
 	// генерируем токен для нового пользователя
-	token, err := u.jwtService.GenerateToken(user_id, user.Name, user.Email)
+	token, err := u.jwtService.GenerateToken(userId, user.Name, user.Email)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
@@ -42,7 +42,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	// устанавливаем куки
 	c.SetCookie("cookie", token, 3600, "/", "", false, true)
 
-	c.JSON(http.StatusCreated, gin.H{"user_id": user_id})
+	c.JSON(http.StatusCreated, gin.H{"user_id": userId})
 }
 
 // авторизация

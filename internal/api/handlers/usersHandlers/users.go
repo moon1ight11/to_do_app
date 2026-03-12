@@ -2,15 +2,15 @@ package usershandlers
 
 import (
 	"todoapp/internal/api/jwt"
-	"todoapp/internal/services"
+	"todoapp/internal/services/usersservice"
 )
 
 type UserHandler struct {
-	userService *services.UserService
+	userService *usersservice.UserService
 	jwtService  jwt.TokenService
 }
 
-func NewUserHandler(userService *services.UserService, jwtService jwt.TokenService) *UserHandler {
+func NewUserHandler(userService *usersservice.UserService, jwtService jwt.TokenService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 		jwtService:  jwtService,

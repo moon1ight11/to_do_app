@@ -1,11 +1,10 @@
-package models
+package tasksrepos
 
 import (
 	"github.com/google/uuid"
 	"time"
 )
 
-// модель для получения, обновления и ответа
 type Task struct {
 	Id          *uuid.UUID `json:"task_id"`
 	ParentId    *uuid.UUID `json:"parent_id"`

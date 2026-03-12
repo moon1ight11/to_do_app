@@ -1,26 +1,13 @@
-package handlers
+package settingshandlers
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"regexp"
-	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/models"
-	"todoapp/internal/services"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
-
-type SettingsHandler struct {
-	settingsService *services.SettingsService
-	jwtService      jwt.TokenService
-}
-
-func NewSettingsHandler(settingsService *services.SettingsService, jwtService jwt.TokenService) *SettingsHandler {
-	return &SettingsHandler{
-		settingsService: settingsService,
-		jwtService:      jwtService}
-}
 
 // получение настроек пользователя
 func (s *SettingsHandler) GetSettings(c *gin.Context) {
@@ -32,21 +19,21 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 	}
 
 	// приводим значение к uuid
-	UserId, ok := userIDValue.(uuid.UUID)
+	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
 
 	// находим настройки по id
-	user_settings, err := s.settingsService.GetSettings(UserId)
+	settings, err := s.settingsService.GetSettings(userId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"settings": user_settings})
+	c.JSON((http.StatusOK), gin.H{"settings": settings})
 }
 
 // изменение настроек пользователя
@@ -59,26 +46,26 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	// приводим значение к uuid
-	UserId, ok := userIDValue.(uuid.UUID)
+	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
-	
-	var UpdatedSettings models.UpdatedSettings
+
+	var updatedSettings models.UpdatedSettings
 
 	// получаем настройки с фронта
-	if err := c.ShouldBindJSON(&UpdatedSettings); err != nil {
+	if err := c.ShouldBindJSON(&updatedSettings); err != nil {
 		log.Println("Error in ShouldBindJSON")
 		c.JSON((http.StatusBadRequest), gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	// если обновляется временная зона
-	if UpdatedSettings.Default_tz != nil {
+	if updatedSettings.UserTz != nil {
 		// проверяем, похожа ли входящая строа на временную зону
 		pattern := `^UTC([+-](?:1[0-4]|[0-9])(?::?[0-5][0-9])?)?$`
-		matched, err := regexp.MatchString(pattern, *UpdatedSettings.Default_tz)
+		matched, err := regexp.MatchString(pattern, *updatedSettings.UserTz)
 		if err != nil {
 			log.Println("Error in MatchString", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err})
@@ -94,12 +81,12 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	// изменяем настройки
-	err := s.settingsService.UpdateSettings(UserId, UpdatedSettings.Default_duration, UpdatedSettings.Default_tz)
+	err := s.settingsService.UpdateSettings(userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"updated_settings": UpdatedSettings})
+	c.JSON((http.StatusOK), gin.H{"updated_settings": updatedSettings})
 }

@@ -1,4 +1,4 @@
-package users
+package usersrepos
 
 import (
 	"fmt"
@@ -6,14 +6,14 @@ import (
 )
 
 // получение пользователя по id
-func (db *Repo) UserById(user_id uuid.UUID) (User, error) {
+func (db *Repo) UserById(userId uuid.UUID) (User, error) {
 	query := `
 				SELECT id, name, email, pass
 				FROM todo_app.users
 				WHERE id = $1
 			`
 	var user User
-	err := db.DB.QueryRow(query, user_id).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
+	err := db.DB.QueryRow(query, userId).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
 	if err != nil {
 		return User{}, fmt.Errorf("Error in UserById query: %w", err)
 	}

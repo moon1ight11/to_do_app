@@ -1,25 +1,12 @@
-package handlers
+package taskshandlers
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"log"
 	"net/http"
-	"todoapp/internal/api/jwt"
-	"todoapp/internal/services"
-	"todoapp/internal/storage/repos/tasks"
+	"todoapp/internal/api/models"
 )
-
-type TasksHandler struct {
-	taskService *services.TasksService
-	jwtService  jwt.TokenService
-}
-
-func NewTasksHandler(taskService *services.TasksService, jwtService jwt.TokenService) *TasksHandler {
-	return &TasksHandler{
-		taskService: taskService,
-		jwtService:  jwtService}
-}
 
 // создание задачи
 func (t *TasksHandler) CreateTask(c *gin.Context) {
@@ -31,35 +18,26 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	}
 
 	// приводим значение к uuid
-	UserId, ok := userIDValue.(uuid.UUID)
+	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
 
-	var NewTask tasks.Task
+	var task models.Task
 
 	// получаем задачу с фронта
-	if err := c.ShouldBindJSON(&NewTask); err != nil {
+	if err := c.ShouldBindJSON(&task); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
 		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
 		return
 	}
 
 	// устанавливаем owner_id
-	NewTask.Owner_id = UserId
-
-	// если есть временные рамки - время на выполнение не должно быть отрицательным
-	if NewTask.Start_at != nil && NewTask.End_at != nil {
-		if NewTask.End_at.Before(*NewTask.Start_at) {
-			log.Println("End_at cannot be before start_at")
-			c.JSON((http.StatusBadRequest), gin.H{"error": "End_at cannot be before start_at"})
-			return
-		}
-	}
+	task.OwnerId = userId
 
 	// добавляем задачу
-	err := t.taskService.CreateTask(NewTask)
+	err := t.taskService.CreateTask(task)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
@@ -79,34 +57,34 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	}
 
 	// приводим значение к uuid
-	UserId, ok := userIDValue.(uuid.UUID)
+	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
 
-	Tasks, err := t.taskService.GetAllTasks(UserId)
+	tasks, err := t.taskService.GetAllTasks(userId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err})
 		return
 	}
 
-	c.JSON((http.StatusOK), gin.H{"tasks": Tasks})
+	c.JSON((http.StatusOK), gin.H{"tasks": tasks})
 }
 
 // получение одной задачи по id
 func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем id задачи
 	idStr := c.Param("task_id")
-	task_id, err := uuid.Parse(idStr)
+	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Println("Error in parse uuid", err)
 		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
 		return
 	}
 
-	task, err := t.taskService.GetOneTask(task_id)
+	task, err := t.taskService.GetOneTask(taskId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
@@ -118,9 +96,9 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 
 // изменение полей задач
 func (t *TasksHandler) UpdateTask(c *gin.Context) {
-	var UpdatedTask tasks.Task
+	var updatedTask models.Task
 	// получаем измененную задачу с фронта
-	if err := c.ShouldBindJSON(&UpdatedTask); err != nil {
+	if err := c.ShouldBindJSON(&updatedTask); err != nil {
 		log.Println("Error in ShouldBindJSON", err)
 		c.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
 		return
@@ -128,7 +106,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 
 	// получаем id задачи которую нужно изменить
 	idStr := c.Param("task_id")
-	task_id, err := uuid.Parse(idStr)
+	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Println("Error in parse uuid", err)
 		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
@@ -136,10 +114,18 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	}
 
 	// указываем, какая задача должна быть изменена
-	UpdatedTask.Id = &task_id
+	updatedTask.Id = &taskId
 
 	// меняем необходимые поля
-	err = t.taskService.ChangeTask(*UpdatedTask.Id, UpdatedTask.Title, UpdatedTask.Description, UpdatedTask.Start_at, UpdatedTask.End_at, UpdatedTask.Completed_at)
+	err = t.taskService.ChangeTask(
+		*updatedTask.Id,
+		updatedTask.Title,
+		updatedTask.Description,
+		updatedTask.StartAt,
+		updatedTask.EndAt,
+		updatedTask.CompletedAt,
+	)
+
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})
@@ -153,7 +139,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// получаем id задачи
 	idStr := c.Param("task_id")
-	task_id, err := uuid.Parse(idStr)
+	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Println("Error in parse uuid", err)
 		c.JSON((http.StatusBadRequest), gin.H{"error": "Error in parse uuid"})
@@ -161,7 +147,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	}
 
 	// процесс удаления задачи и ее подзадач
-	err = t.taskService.DeleteTask(task_id)
+	err = t.taskService.DeleteTask(taskId)
 	if err != nil {
 		log.Println(err)
 		c.JSON((http.StatusInternalServerError), gin.H{"error": err.Error()})

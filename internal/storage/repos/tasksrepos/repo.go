@@ -1,4 +1,4 @@
-package tasks
+package tasksrepos
 
 import (
 	"todoapp/internal/storage"

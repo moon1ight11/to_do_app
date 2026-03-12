@@ -1,4 +1,4 @@
-package settings
+package settingsrepos
 
 import "todoapp/internal/storage"
 

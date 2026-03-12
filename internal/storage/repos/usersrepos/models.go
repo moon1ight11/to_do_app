@@ -1,4 +1,4 @@
-package users
+package usersrepos
 
 import (
 	"github.com/google/uuid"

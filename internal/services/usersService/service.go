@@ -5,10 +5,9 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"todoapp/internal/api/models"
-	"todoapp/internal/storage/repos/users"
 )
 
-// добавление пользователя в БД +++
+// добавление пользователя в БД
 func (u *UserService) AddUser(user models.UserAuth) (uuid.UUID, error) {
 	// проверка на уникальность имени и почты
 	exist, err := u.CheckNameAndEmail(user.Name, user.Email)
@@ -34,13 +33,10 @@ func (u *UserService) AddUser(user models.UserAuth) (uuid.UUID, error) {
 	return user_id, nil
 }
 
-// проверка и получение пользователя +++
+// проверка и получение пользователя
 func (u *UserService) CheckAndGetUser(user models.UserAuth) (models.UserRequest, error) {
-	var foundUser users.User
-	var err error
-
 	// находим пользователя по почте
-	foundUser, err = u.userRepo.UserByEmail(user.Email)
+	foundUser, err := u.userRepo.UserByEmail(user.Email)
 	if err != nil {
 		return models.UserRequest{}, err
 	}
@@ -61,7 +57,7 @@ func (u *UserService) CheckAndGetUser(user models.UserAuth) (models.UserRequest,
 	return userApi, nil
 }
 
-// проверка свободности имени и почты +++
+// проверка свободности имени и почты
 func (u *UserService) CheckNameAndEmail(userName string, userEmail string) (bool, error) {
 	// проверяем имя
 	exist, err := u.userRepo.CheckUserName(userName)
@@ -81,30 +77,25 @@ func (u *UserService) CheckNameAndEmail(userName string, userEmail string) (bool
 	return exist, nil
 }
 
-
-
 // получение данных пользователя
-func (u *UserService) GetUser(UserId uuid.UUID) (users.User, error) {
-	user, err := u.userRepo.UserById(UserId)
+func (u *UserService) GetUser(userId uuid.UUID) (models.UserRequest, error) {
+	// запрашиваем пользователя в репозитории
+	user, err := u.userRepo.UserById(userId)
 	if err != nil {
-		return users.User{}, err
+		return models.UserRequest{}, err
 	}
 
-	return user, nil
-}
+	// приводим тип
+	var userApi models.UserRequest
+	userApi.Id = user.Id
+	userApi.Name = user.Name
+	userApi.Email = user.Email
 
-// проверка существования пользователя по id
-func (u *UserService) CheckUserByID(user_id uuid.UUID) (bool, error) {
-	_, err := u.userRepo.UserById(user_id)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return userApi, nil
 }
 
 // обновление полей пользователя
-func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_email *string, user_id uuid.UUID) error {
+func (u *UserService) UpdateUser(name *string, pass *string, email *string, userId uuid.UUID) error {
 	// открываем транзакцию
 	transaction, err := u.userRepo.DB.Begin()
 	if err != nil {
@@ -115,9 +106,9 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 	defer transaction.Rollback()
 
 	// если меняем имя
-	if user_name != nil {
+	if name != nil {
 		// проверяем, не занято ли новое имя
-		NameExist, err := u.userRepo.CheckUserName(*user_name)
+		NameExist, err := u.userRepo.CheckUserName(*name)
 		if err != nil {
 			return err
 		}
@@ -126,24 +117,31 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 		}
 
 		// если ок - меняем
-		err = u.userRepo.UpdateName(*user_name, user_id, transaction)
+		err = u.userRepo.UpdateName(*name, userId, transaction)
 		if err != nil {
 			return err
 		}
 	}
 
 	// если меняем пароль
-	if user_pass != nil {
-		err := u.userRepo.UpdatePass(*user_pass, user_id, transaction)
+	if pass != nil {
+		// хэширование пароля
+		hashPass, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("error in hash password: %w", err)
+		}
+
+		// изменяем пароль
+		err = u.userRepo.UpdatePass(string(hashPass), userId, transaction)
 		if err != nil {
 			return err
 		}
 	}
 
 	// если меняем почту
-	if user_email != nil {
+	if email != nil {
 		// проверяем, не занята ли новая почта
-		EmailExist, err := u.CheckEmail(*user_email)
+		EmailExist, err := u.userRepo.CheckUserEmail(*email)
 		if err != nil {
 			return err
 		}
@@ -152,7 +150,7 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 		}
 
 		// если ок - меняем
-		err = u.userRepo.UpdateEmail(*user_email, user_id, transaction)
+		err = u.userRepo.UpdateEmail(*email, userId, transaction)
 		if err != nil {
 			return err
 		}
@@ -163,9 +161,20 @@ func (u *UserService) UpdateUser(user_name *string, user_pass *string, user_emai
 	return nil
 }
 
+// проверка существования пользователя по id
+func (u *UserService) CheckUserByID(userId uuid.UUID) (bool, error) {
+	// получаем пользователя по id
+	_, err := u.userRepo.UserById(userId)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // удаление пользователя
-func (u *UserService) DeleteUser(user_id uuid.UUID) error {
-	err := u.userRepo.DeleteUser(user_id)
+func (u *UserService) DeleteUser(userId uuid.UUID) error {
+	err := u.userRepo.DeleteUser(userId)
 	if err != nil {
 		return err
 	}

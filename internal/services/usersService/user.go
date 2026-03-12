@@ -1,13 +1,11 @@
 package usersservice
 
-import (
-	"todoapp/internal/storage/repos/users"
-)
+import "todoapp/internal/storage/repos/usersrepos"
 
 type UserService struct {
-	userRepo *users.Repo
+	userRepo *usersrepos.Repo
 }
 
-func NewUserService(userRepo *users.Repo) *UserService {
+func NewUserService(userRepo *usersrepos.Repo) *UserService {
 	return &UserService{userRepo: userRepo}
 }

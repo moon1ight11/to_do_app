@@ -1,4 +1,4 @@
-package settings
+package settingsrepos
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 )
 
 // получение настроек по id
-func (db *Repo) SettingsById(user_id uuid.UUID) (Setting, error) {
+func (db *Repo) SettingsById(userId uuid.UUID) (Setting, error) {
 	query := `
 				SELECT default_tz, default_duration
 				FROM todo_app.settings
@@ -14,7 +14,7 @@ func (db *Repo) SettingsById(user_id uuid.UUID) (Setting, error) {
 			`
 	var setting Setting
 
-	err := db.DB.QueryRow(query, user_id).Scan(&setting.DefaultTz, &setting.DefaultDuration)
+	err := db.DB.QueryRow(query, userId).Scan(&setting.UserTz, &setting.TimeDuration)
 	if err != nil {
 		return Setting{}, fmt.Errorf("Error in SettingsById query: %w", err)
 	}

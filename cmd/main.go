@@ -3,14 +3,19 @@ package main
 import (
 	"log"
 	"todoapp/internal/api"
-	"todoapp/internal/api/handlers"
-	"todoapp/internal/config"
+	"todoapp/internal/api/handlers/authhandlers"
+	"todoapp/internal/api/handlers/settingshandlers"
+	"todoapp/internal/api/handlers/taskshandlers"
+	"todoapp/internal/api/handlers/usershandlers"
 	"todoapp/internal/api/jwt"
-	"todoapp/internal/services"
+	"todoapp/internal/config"
+	"todoapp/internal/services/settingsservice"
+	"todoapp/internal/services/tasksservice"
+	"todoapp/internal/services/usersservice"
 	"todoapp/internal/storage"
-	"todoapp/internal/storage/repos/settings"
-	"todoapp/internal/storage/repos/tasks"
-	"todoapp/internal/storage/repos/users"
+	"todoapp/internal/storage/repos/settingsrepos"
+	"todoapp/internal/storage/repos/tasksrepos"
+	"todoapp/internal/storage/repos/usersrepos"
 )
 
 func main() {
@@ -32,21 +37,22 @@ func main() {
 		log.Fatal("Failed to upping migrations", err)
 	}
 
+	// инициализация jwt
 	jwtService := jwt.NewJWTService(cfg.JWT.Secret, cfg.JWT.Expiration)
 
 	// инициализация зависимостей
-	userRepo := users.NewUserRepo(db)
-	userService := services.NewUserService(userRepo)
-	userHandler := handlers.NewUserHandler(userService, jwtService)
-	authHandler := handlers.NewAuthHandler(userService, jwtService)
+	userRepo := usersrepos.NewUserRepo(db)
+	userService := usersservice.NewUserService(userRepo)
+	userHandler := usershandlers.NewUserHandler(userService, jwtService)
+	authHandler := authhandlers.NewAuthHandler(userService, jwtService)
 
-	settingsRepo := settings.NewSettingsRepo(db)
-	settingsService := services.NewSettingsService(settingsRepo)
-	settingsHandler := handlers.NewSettingsHandler(settingsService, jwtService)
+	settingsRepo := settingsrepos.NewSettingsRepo(db)
+	settingsService := settingsservice.NewSettingsService(settingsRepo)
+	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, jwtService)
 
-	tasksRepo := tasks.NewTasksRepo(db)
-	tasksService := services.NewTasksService(tasksRepo)
-	tasksHandler := handlers.NewTasksHandler(tasksService, jwtService)
+	tasksRepo := tasksrepos.NewTasksRepo(db)
+	tasksService := tasksservice.NewTasksService(tasksRepo)
+	tasksHandler := taskshandlers.NewTasksHandler(tasksService, jwtService)
 
 	// инициализация роутера
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)

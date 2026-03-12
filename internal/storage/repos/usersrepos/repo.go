@@ -1,4 +1,4 @@
-package users
+package usersrepos
 
 import (
 	"todoapp/internal/storage"

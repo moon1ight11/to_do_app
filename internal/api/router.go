@@ -2,24 +2,27 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"todoapp/internal/api/handlers"
+	"todoapp/internal/api/handlers/authhandlers"
+	"todoapp/internal/api/handlers/settingshandlers"
+	"todoapp/internal/api/handlers/taskshandlers"
+	"todoapp/internal/api/handlers/usershandlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
 )
 
 type Router struct {
-	userHandler     *handlers.UserHandler
-	settingsHandler *handlers.SettingsHandler
-	tasksHandler    *handlers.TasksHandler
-	authHandler     *handlers.AuthHandler
+	userHandler     *usershandlers.UserHandler
+	settingsHandler *settingshandlers.SettingsHandler
+	tasksHandler    *taskshandlers.TasksHandler
+	authHandler     *authhandlers.AuthHandler
 	ginEngine       *gin.Engine
 }
 
 func NewRouter(
-	userHandler *handlers.UserHandler,
-	settingsHandler *handlers.SettingsHandler,
-	tasksHandler *handlers.TasksHandler,
-	authHandler *handlers.AuthHandler,
+	userHandler *usershandlers.UserHandler,
+	settingsHandler *settingshandlers.SettingsHandler,
+	tasksHandler *taskshandlers.TasksHandler,
+	authHandler *authhandlers.AuthHandler,
 ) *Router {
 	return &Router{
 		userHandler:     userHandler,
