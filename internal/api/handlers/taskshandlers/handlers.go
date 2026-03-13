@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"log"
 	"net/http"
 	"time"
 	"todoapp/internal/api/models"
@@ -16,7 +15,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// получаем id из контекста
 	userIDValue, exist := c.Get("UserId")
 	if !exist {
-		log.Println("Error in create task: user ID not found in context")
+		t.logger.Error("Error in CreateTask: user ID not found in context")
 		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
 		return
 	}
@@ -24,7 +23,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// приводим значение к uuid
 	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
-		log.Println("Error in create task: invalid user ID type")
+		t.logger.Error("Error in CreateTask: invalid user ID type")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
@@ -33,7 +32,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 
 	// получаем задачу с фронта
 	if err := c.ShouldBindJSON(&task); err != nil {
-		log.Println("Error in create task ShouldBindJSON: %w", err)
+		t.logger.Error("Error in CreateTask ShouldBindJSON: %w", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -49,14 +48,16 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	err := t.taskService.CreateTask(ctx, task)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Println("Error in create task: %w", err)
+			t.logger.Error("Error in CreateTask:", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		log.Println("Error in create task: %w", err)
+		t.logger.Error("Error in CreateTask:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	t.logger.Info("Task created successfully by user %v", userId)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "successful"})
 }
@@ -66,7 +67,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	// получаем id из контекста
 	userIDValue, exist := c.Get("UserId")
 	if !exist {
-		log.Println("Error in get tasks: user ID not found in context")
+		t.logger.Error("Error in GetTasks: user ID not found in context")
 		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
 		return
 	}
@@ -74,7 +75,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	// приводим значение к uuid
 	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
-		log.Println("Error in get tasks: invalid user ID type")
+		t.logger.Error("Error in GetTasks: invalid user ID type")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
@@ -87,14 +88,16 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	tasks, err := t.taskService.GetAllTasks(ctx, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Println("Error in get tasks: %w", err)
+			t.logger.Error("Error in GetTasks:", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		log.Println("Error in get tasks: %w", err)
+		t.logger.Error("Error in GetTasks: %w", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	t.logger.Info("Tasks getted successfully by user %v", userId)
 
 	c.JSON(http.StatusOK, gin.H{"tasks": tasks})
 }
@@ -104,7 +107,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем id из контекста
 	userIDValue, exist := c.Get("UserId")
 	if !exist {
-		log.Println("Error in get task by Id: user ID not found in context")
+		t.logger.Error("Error in GetTaskById: user ID not found in context")
 		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
 		return
 	}
@@ -112,7 +115,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// приводим значение к uuid
 	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
-		log.Println("Error in get task by Id: invalid user ID type")
+		t.logger.Error("Error in GetTaskById: invalid user ID type")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
@@ -121,7 +124,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
-		log.Println("Error in parse uuid in get task by Id: %w", err)
+		t.logger.Error("Error in parse uuid in GetTaskById: %w", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -134,14 +137,16 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Println("Error in get task by Id: %w", err)
+			t.logger.Error("Error in GetTaskById:", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		log.Println("Error in get task by Id: %w", err)
+		t.logger.Error("Error in GetTaskById:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	t.logger.Info("One task getted successfully by user %v", userId)
 
 	c.JSON(http.StatusOK, gin.H{"task": task})
 }
@@ -151,7 +156,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// получаем id из контекста
 	userIDValue, exist := c.Get("UserId")
 	if !exist {
-		log.Println("Error in update task: user ID not found in context")
+		t.logger.Error("Error in UpdateTask: user ID not found in context")
 		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
 		return
 	}
@@ -159,7 +164,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// приводим значение к uuid
 	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
-		log.Println("Error in update task: invalid user ID type")
+		t.logger.Error("Error in UpdateTask: invalid user ID type")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
@@ -167,7 +172,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	var updatedTask models.Task
 	// получаем измененную задачу с фронта
 	if err := c.ShouldBindJSON(&updatedTask); err != nil {
-		log.Println("Error in update task ShouldBindJSON: %w", err)
+		t.logger.Error("Error in UpdateTask ShouldBindJSON:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -176,7 +181,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
-		log.Println("Error in parse uuid in update task: %w", err)
+		t.logger.Error("Error in parse uuid in UpdateTask:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -201,21 +206,23 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Println("Error in update task: %w", err)
+			t.logger.Error("Error in UpdateTask:", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		log.Println("Error in update task: %w", err)
+		t.logger.Error("Error in UpdateTask:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
-		log.Println("Error in update task: %w", err)
+		t.logger.Error("Error in UpdateTask:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	t.logger.Info("Task %v updated successfully by user %v", taskId, userId)
 
 	c.JSON(http.StatusOK, gin.H{"updated_task": task})
 }
@@ -225,7 +232,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// получаем id из контекста
 	userIDValue, exist := c.Get("UserId")
 	if !exist {
-		log.Println("Error in dalete task: user ID not found in context")
+		t.logger.Error("Error in DeleteTask: user ID not found in context")
 		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
 		return
 	}
@@ -233,7 +240,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// приводим значение к uuid
 	userId, ok := userIDValue.(uuid.UUID)
 	if !ok {
-		log.Println("Error in delete task: invalid user ID type")
+		t.logger.Error("Error in DeleteTask: invalid user ID type")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
 		return
 	}
@@ -242,7 +249,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
-		log.Println("Error in parse uuid in delete task: %w", err)
+		t.logger.Error("Error in parse uuid in DeleteTask:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -255,14 +262,16 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	err = t.taskService.DeleteTask(ctx, taskId, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Println("Error in delete task: %w", err)
+			t.logger.Error("Error in DeleteTask:", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		log.Println("Error in delete task: %w", err)
+		t.logger.Error("Error in DeleteTask:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	t.logger.Info("Task %v deleted successfully by user %v", taskId, userId)
 
 	c.JSON(http.StatusOK, gin.H{"message": "successful"})
 }

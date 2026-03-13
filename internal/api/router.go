@@ -9,6 +9,7 @@ import (
 	"todoapp/internal/api/handlers/usershandlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
+	"todoapp/pkg/logger"
 )
 
 type Router struct {
@@ -43,7 +44,7 @@ func (r *Router) Run() error {
 	return nil
 }
 
-func (r *Router) Init(jwtService jwt.TokenService) {
+func (r *Router) Init(jwtService jwt.TokenService, logger *logger.Logger) {
 	r.ginEngine.Use(middleware.CORS())
 
 	// группировка роутов
@@ -51,7 +52,7 @@ func (r *Router) Init(jwtService jwt.TokenService) {
 	authGroup := r.ginEngine.Group("/v1/auth")
 
 	// MIDDLEWARES //
-	privateGroup.Use(middleware.Auth(jwtService))
+	privateGroup.Use(middleware.Auth(jwtService, logger))
 
 	// АУТЕНТИФИКАЦИЯ //
 	// регистрация

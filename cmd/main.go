@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"todoapp/internal/api"
 	"todoapp/internal/api/handlers/authhandlers"
 	"todoapp/internal/api/handlers/settingshandlers"
@@ -16,25 +15,33 @@ import (
 	"todoapp/internal/storage/repos/settingsrepos"
 	"todoapp/internal/storage/repos/tasksrepos"
 	"todoapp/internal/storage/repos/usersrepos"
+	"todoapp/pkg/logger"
 )
 
 func main() {
+	// создание логгера с записью в файл
+	logger, err := logger.New("logs/ToDoApp.log")
+	if err != nil {
+		panic(err)
+	}
+
+	defer logger.Close()
 	// инициализация конфигурации
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to load config: %w", err)
+		logger.Fatal("Failed to load config:", err)
 	}
 
 	// соединение с БД
 	db, err := storage.NewStorage(cfg)
 	if err != nil {
-		log.Fatal("Failed to connect DB: %w", err)
+		logger.Fatal("Failed to load config:", err)
 	}
 
 	// применение миграций
 	err = db.UpMigrations()
 	if err != nil {
-		log.Fatal("Failed to upping migrations: %w", err)
+		logger.Fatal("Failed to upping migrations:", err)
 	}
 
 	// инициализация jwt
@@ -43,26 +50,26 @@ func main() {
 	// инициализация зависимостей
 	userRepo := usersrepos.NewUserRepo(db)
 	userService := usersservice.NewUserService(userRepo)
-	userHandler := usershandlers.NewUserHandler(userService)
-	authHandler := authhandlers.NewAuthHandler(userService, jwtService)
+	userHandler := usershandlers.NewUserHandler(userService, logger)
+	authHandler := authhandlers.NewAuthHandler(userService, jwtService, logger)
 
 	settingsRepo := settingsrepos.NewSettingsRepo(db)
 	settingsService := settingsservice.NewSettingsService(settingsRepo)
-	settingsHandler := settingshandlers.NewSettingsHandler(settingsService)
+	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, logger)
 
 	tasksRepo := tasksrepos.NewTasksRepo(db)
 	tasksService := tasksservice.NewTasksService(tasksRepo)
-	tasksHandler := taskshandlers.NewTasksHandler(tasksService)
+	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger)
 
 	// инициализация роутера
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)
 
 	// инициализация роутов
-	router.Init(jwtService)
+	router.Init(jwtService, logger)
 
 	// запуск роутера
 	err = router.Run()
 	if err != nil {
-		log.Fatal("Failed to run Gin router: %w", err)
+		logger.Fatal("Failed to run Gin router:", err)
 	}
 }
