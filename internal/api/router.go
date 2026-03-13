@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"todoapp/internal/api/handlers/authhandlers"
 	"todoapp/internal/api/handlers/settingshandlers"
@@ -36,7 +37,7 @@ func NewRouter(
 func (r *Router) Run() error {
 	err := r.ginEngine.Run(":8080")
 	if err != nil {
-		return err
+		return fmt.Errorf("error in run router: %w", err)
 	}
 
 	return nil

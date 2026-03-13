@@ -22,19 +22,19 @@ func main() {
 	// инициализация конфигурации
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to load config", err)
+		log.Fatal("Failed to load config: %w", err)
 	}
 
 	// соединение с БД
 	db, err := storage.NewStorage(cfg)
 	if err != nil {
-		log.Fatal("Failed to connect DB")
+		log.Fatal("Failed to connect DB: %w", err)
 	}
 
 	// применение миграций
 	err = db.UpMigrations()
 	if err != nil {
-		log.Fatal("Failed to upping migrations", err)
+		log.Fatal("Failed to upping migrations: %w", err)
 	}
 
 	// инициализация jwt
@@ -63,6 +63,6 @@ func main() {
 	// запуск роутера
 	err = router.Run()
 	if err != nil {
-		log.Fatal("Failed to run Gin router", err)
+		log.Fatal("Failed to run Gin router: %w", err)
 	}
 }

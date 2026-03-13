@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -15,7 +14,7 @@ func (db *Repo) UpdateTZ(ctx context.Context, tz string, userId uuid.UUID, tx *s
 				SET default_tz = $1
 				WHERE user_id = $2
 			`
-			
+
 	_, err := tx.ExecContext(ctx, query, tz, userId)
 	if err != nil {
 		return fmt.Errorf("error in UpdateTZ query: %w", err)

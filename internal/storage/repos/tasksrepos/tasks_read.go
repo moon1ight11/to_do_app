@@ -3,7 +3,6 @@ package tasksrepos
 import (
 	"context"
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -76,15 +75,27 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 }
 
 // поиск задачи по id
-func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID) (Task, error) {
+func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID) (Task, error) {
 	query := `
 				SELECT id, title, description, start_at, end_at, parent_task_id
 				FROM todo_app.tasks
-				WHERE id = $1
+				WHERE id = $1 AND owner_id = $2
 			`
 
 	var task Task
-	err := db.DB.QueryRowContext(ctx, query, taskId).Scan(&task.Id, &task.Title, &task.Description, &task.StartAt, &task.EndAt, &task.ParentId)
+	err := db.DB.QueryRowContext(
+		ctx,
+		query,
+		taskId,
+		ownerId,
+	).Scan(
+		&task.Id,
+		&task.Title,
+		&task.Description,
+		&task.StartAt,
+		&task.EndAt,
+		&task.ParentId,
+	)
 
 	if err != nil {
 		return Task{}, fmt.Errorf("error in TaskById query: %w", err)

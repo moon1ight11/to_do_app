@@ -8,12 +8,12 @@ import (
 )
 
 // удаление задачи
-func (db *Repo) DeleteTask(ctx context.Context, taskId uuid.UUID, tx *sql.Tx) error {
+func (db *Repo) DeleteTask(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, tx *sql.Tx) error {
 	query := `
 				DELETE FROM todo_app.tasks
-				WHERE id = $1
+				WHERE id = $1 AND owner_id = $2
 			`
-	_, err := tx.ExecContext(ctx, query, taskId)
+	_, err := tx.ExecContext(ctx, query, taskId, ownerId)
 	if err != nil {
 		return fmt.Errorf("error in DeleteTask query: %w", err)
 	}

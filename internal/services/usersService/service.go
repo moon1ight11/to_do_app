@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"regexp"
 	"strings"
 	"todoapp/internal/api/models"
@@ -19,7 +18,7 @@ func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.U
 		return uuid.Nil, err
 	}
 	if exist {
-		return uuid.Nil, fmt.Errorf("name or email already exists")
+		return uuid.Nil, fmt.Errorf("error in AddUser: name or email already exists")
 	}
 
 	// хэширование пароля
@@ -48,7 +47,7 @@ func (u *UserService) CheckAndGetUser(ctx context.Context, user models.UserAuth)
 	// сравниваем пароли
 	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Pass), []byte(user.Pass))
 	if err != nil {
-		return models.UserRequest{}, fmt.Errorf("Passwords not match")
+		return models.UserRequest{}, fmt.Errorf("error in CheckAndGetUser: passwords not match")
 	}
 
 	// приводим тип для экспорта
@@ -103,16 +102,14 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 	// если обновляется имя - чтобы было не пустое
 	if name != nil {
 		if strings.TrimSpace(*name) == "" {
-			log.Println("New name is empty")
-			return fmt.Errorf("new name is empty")
+			return fmt.Errorf("error in UpdateUser: new name is empty")
 		}
 	}
 
 	// если обновляется пароль - чтобы не был пустым
 	if pass != nil {
 		if strings.TrimSpace(*pass) == "" {
-			log.Println("New pass is empty")
-			return fmt.Errorf("new pass is empty")
+			return fmt.Errorf("error in UpdateUser: new pass is empty")
 		}
 	}
 
@@ -122,21 +119,19 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		pattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
 		matched, err := regexp.MatchString(pattern, *email)
 		if err != nil {
-			log.Println("Error in MatchString", err)
-			return fmt.Errorf("error in check email: %w", err)
+			return fmt.Errorf("error in check email in UpdateUser: %w", err)
 		}
 
 		// если нет - отклоняем
 		if !matched {
-			log.Println("New email not looks like email")
-			return fmt.Errorf("new email not looks like email")
+			return fmt.Errorf("error in UpdateUser: new email not looks like email")
 		}
 	}
 
 	// открываем транзакцию
 	transaction, err := u.userRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in UpdateUser BeginTx: %w", err)
 	}
 
 	// отложенно откатываем транзакцию
@@ -150,7 +145,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 			return err
 		}
 		if NameExist {
-			return fmt.Errorf("New name already exist")
+			return fmt.Errorf("error in UpdateUser: new name already exist")
 		}
 
 		// если ок - меняем
@@ -165,7 +160,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// хэширование пароля
 		hashPass, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
 		if err != nil {
-			return fmt.Errorf("error in hash password: %w", err)
+			return fmt.Errorf("error in hash password in UpdateUser: %w", err)
 		}
 
 		// изменяем пароль
@@ -183,7 +178,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 			return err
 		}
 		if EmailExist {
-			return fmt.Errorf("New email already exist")
+			return fmt.Errorf("error in UpdateUser: new email already exist")
 		}
 
 		// если ок - меняем

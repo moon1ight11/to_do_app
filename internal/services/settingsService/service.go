@@ -3,11 +3,9 @@ package settingsservice
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/google/uuid"
 	"regexp"
 	"todoapp/internal/api/models"
-
-	"github.com/google/uuid"
 )
 
 // получение настроек
@@ -34,13 +32,11 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 		pattern := `^UTC([+-](?:1[0-4]|[0-9])(?::?[0-5][0-9])?)?$`
 		matched, err := regexp.MatchString(pattern, *tz)
 		if err != nil {
-			log.Println("Error in MatchString", err)
-			return fmt.Errorf("error in check email: %w", err)
+			return fmt.Errorf("error in check email in update settings: %w", err)
 		}
 
 		// если нет - прокидываем
 		if !matched {
-			log.Println("Timezone not right")
 			return fmt.Errorf("timezone not looks like timezone")
 		}
 	}
@@ -48,7 +44,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	// открываем транзакцию
 	transaction, err := s.settingsRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in update settings BeginTx: %w", err)
 	}
 
 	// отложенно откатываем транзакцию

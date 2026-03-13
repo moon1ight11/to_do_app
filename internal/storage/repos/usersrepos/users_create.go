@@ -35,7 +35,7 @@ func (db *Repo) CreateUser(ctx context.Context, name string, hashPass string, em
 
 	_, err = transaction.ExecContext(ctx, querySettings, userId)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Error in AddSettings query: %w", err)
+		return uuid.Nil, fmt.Errorf("error in AddSettings query: %w", err)
 	}
 
 	err = transaction.Commit()
