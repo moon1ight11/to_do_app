@@ -97,7 +97,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// получаем измененные настройки
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
-		s.logger.Error("Error in UpdateSettings: %w", err)
+		s.logger.Error("Error in UpdateSettings:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -24,7 +24,7 @@ func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.U
 	// хэширование пароля
 	hashPass, err := bcrypt.GenerateFromPassword([]byte(user.Pass), bcrypt.DefaultCost)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("error in hash password: %w", err)
+		return uuid.Nil, fmt.Errorf("error in AddUser hash password: %w", err)
 	}
 
 	// добавление в базу данных
@@ -191,7 +191,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 	// если все ок - подтверждаем транзакцию
 	err = transaction.Commit()
 	if err != nil {
-		return fmt.Errorf("error in update user commit: %w", err)
+		return fmt.Errorf("error in UpdateUser commit: %w", err)
 	}
 
 	return nil

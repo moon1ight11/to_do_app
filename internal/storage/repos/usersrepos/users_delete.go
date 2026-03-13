@@ -10,7 +10,7 @@ import (
 func (db *Repo) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	transaction, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in DeleteUser BeginTx: %w", err)
 	}
 
 	defer transaction.Rollback()
@@ -21,7 +21,7 @@ func (db *Repo) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 					`
 	_, err = transaction.ExecContext(ctx, querySettings, userId)
 	if err != nil {
-		return fmt.Errorf("error in DeleteUserSettings query: %w", err)
+		return fmt.Errorf("error in DeleteSettings query: %w", err)
 	}
 
 	query := `

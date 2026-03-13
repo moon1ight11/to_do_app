@@ -58,7 +58,7 @@ func (t *TasksService) GetOneTask(ctx context.Context, taskId uuid.UUID, userId 
 
 	ownerId := task.OwnerId
 	if ownerId == uuid.Nil {
-		return models.Task{}, fmt.Errorf("error in get one task: ownerId is nil")
+		return models.Task{}, fmt.Errorf("error in GetOneTask: ownerId is nil")
 	}
 
 	taskApi := t.buildTaskWithSubtasks(ctx, &task, ownerId)
@@ -80,7 +80,7 @@ func (t *TasksService) ChangeTask(
 	// запускаем транзакцию
 	transaction, err := t.tasksRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("error in change task BeginTx: %w", err)
+		return fmt.Errorf("error in ChangeTask BeginTx: %w", err)
 	}
 
 	// отложенно откатываем транзакцию
@@ -96,21 +96,21 @@ func (t *TasksService) ChangeTask(
 	// если меняются оба времени
 	if endAt != nil && startAt != nil {
 		if endAt.Before(*startAt) {
-			return fmt.Errorf("error in change task: end_at cannot be before start_at")
+			return fmt.Errorf("error in ChangeTask: end_at cannot be before start_at")
 		}
 	}
 
 	// если меняется толко время начала
 	if endAt == nil && startAt != nil && foundTask.EndAt != nil {
 		if foundTask.EndAt.Before(*startAt) {
-			return fmt.Errorf("error in change task: end_at cannot be before start_at")
+			return fmt.Errorf("error in ChangeTask: end_at cannot be before start_at")
 		}
 	}
 
 	// если меняется только конец
 	if startAt == nil && endAt != nil && foundTask.StartAt != nil {
 		if endAt.Before(*foundTask.StartAt) {
-			return fmt.Errorf("error in change task: end_at cannot be before start_at")
+			return fmt.Errorf("error in ChangeTask: end_at cannot be before start_at")
 		}
 	}
 
@@ -164,7 +164,7 @@ func (t *TasksService) ChangeTask(
 	// если ошибок нет - подтверждаем транзакцию
 	err = transaction.Commit()
 	if err != nil {
-		return fmt.Errorf("error in change task commit: %w", err)
+		return fmt.Errorf("error in ChangeTask commit: %w", err)
 	}
 
 	return nil
@@ -196,7 +196,7 @@ func (t *TasksService) DeleteTask(ctx context.Context, taskId uuid.UUID, userId 
 	// если ошибок нет - подтверждаем транзакцию
 	err = transaction.Commit()
 	if err != nil {
-		return fmt.Errorf("error in delete task commit: %w", err)
+		return fmt.Errorf("error in DeleteTask commit: %w", err)
 	}
 	return nil
 }

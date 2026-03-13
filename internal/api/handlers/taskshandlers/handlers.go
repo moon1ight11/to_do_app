@@ -32,7 +32,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 
 	// получаем задачу с фронта
 	if err := c.ShouldBindJSON(&task); err != nil {
-		t.logger.Error("Error in CreateTask ShouldBindJSON: %w", err)
+		t.logger.Error("Error in CreateTask ShouldBindJSON:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -92,7 +92,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		t.logger.Error("Error in GetTasks: %w", err)
+		t.logger.Error("Error in GetTasks:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -124,7 +124,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
-		t.logger.Error("Error in parse uuid in GetTaskById: %w", err)
+		t.logger.Error("Error in parse uuid in GetTaskById:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

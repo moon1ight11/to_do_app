@@ -134,11 +134,11 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	err := u.userService.DeleteUser(ctx, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			u.logger.Error("Error in DeleteUser: %w", err)
+			u.logger.Error("Error in DeleteUser:", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		u.logger.Error("Error in DeleteUser: %w", err)
+		u.logger.Error("Error in DeleteUser:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

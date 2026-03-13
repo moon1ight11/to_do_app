@@ -10,7 +10,7 @@ import (
 func (db *Repo) CreateUser(ctx context.Context, name string, hashPass string, email string) (uuid.UUID, error) {
 	transaction, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("error in CreateUser BeginTx: %w", err)
 	}
 
 	defer transaction.Rollback()
@@ -25,7 +25,7 @@ func (db *Repo) CreateUser(ctx context.Context, name string, hashPass string, em
 
 	err = transaction.QueryRowContext(ctx, query, name, hashPass, email).Scan(&userId)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("error in AddUser query: %w", err)
+		return uuid.Nil, fmt.Errorf("error in CreateUser query: %w", err)
 	}
 
 	querySettings := `
@@ -35,12 +35,12 @@ func (db *Repo) CreateUser(ctx context.Context, name string, hashPass string, em
 
 	_, err = transaction.ExecContext(ctx, querySettings, userId)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("error in AddSettings query: %w", err)
+		return uuid.Nil, fmt.Errorf("error in CreateSettings query: %w", err)
 	}
 
 	err = transaction.Commit()
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("error in create user commit: %w", err)
+		return uuid.Nil, fmt.Errorf("error in CreateUser commit: %w", err)
 	}
 
 	return userId, nil
