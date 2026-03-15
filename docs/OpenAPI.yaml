@@ -9,7 +9,7 @@ servers:
     description: Todoapp server
 
 paths:
-  /v1/auth/sign-up:
+  /v1/auth/sign-up: 
     post:
       summary: Метод для регистрации
       tags:

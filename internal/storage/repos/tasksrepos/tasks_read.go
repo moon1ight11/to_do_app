@@ -9,7 +9,7 @@ import (
 // отображение всех родительских задач пользователя
 func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, error) {
 	query := `
-				SELECT id, title, description, start_at, end_at, completed_at IS NOT NULL as completed
+				SELECT id, title, description, owner_id, start_at, end_at, completed_at IS NOT NULL as completed
 				FROM todo_app.tasks
 				WHERE owner_id = $1 AND parent_task_id IS NULL
 				ORDER BY created_at DESC
@@ -27,6 +27,7 @@ func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, 
 			&task.Id,
 			&task.Title,
 			&task.Description,
+			&task.OwnerId,
 			&task.StartAt,
 			&task.EndAt,
 			&task.CompletedAt,
@@ -42,7 +43,7 @@ func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, 
 // отображение всех подзадач одной родительской задачи пользователя
 func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentId uuid.UUID) ([]Task, error) {
 	query := `
-				SELECT id, parent_task_id, title, description, start_at, end_at,
+				SELECT id, parent_task_id, title, description, owner_id, start_at, end_at,
 				completed_at IS NOT NULL as completed
 				FROM todo_app.tasks
 				WHERE owner_id = $1 AND parent_task_id = $2
@@ -62,6 +63,7 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 			&task.ParentId,
 			&task.Title,
 			&task.Description,
+			&task.OwnerId,
 			&task.StartAt,
 			&task.EndAt,
 			&task.CompletedAt,
@@ -77,7 +79,7 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 // поиск задачи по id
 func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID) (Task, error) {
 	query := `
-				SELECT id, title, description, start_at, end_at, parent_task_id
+				SELECT id, title, description, owner_id, start_at, end_at, parent_task_id
 				FROM todo_app.tasks
 				WHERE id = $1 AND owner_id = $2
 			`
@@ -92,6 +94,7 @@ func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUI
 		&task.Id,
 		&task.Title,
 		&task.Description,
+		&task.OwnerId,
 		&task.StartAt,
 		&task.EndAt,
 		&task.ParentId,

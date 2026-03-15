@@ -36,16 +36,16 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			u.logger.Error("Error in GetUser:", err)
+			u.logger.Error("Error in GetUser:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		u.logger.Error("Error in GetUser:", err)
+		u.logger.Error("Error in GetUser:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	u.logger.Info("User %v getted successfully", user.Id)
+	u.logger.Info("User getted successfully", "user", user.Id)
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
@@ -73,7 +73,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 
 	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&updatedUser); err != nil {
-		u.logger.Error("Error in UpdateUser ShouldBindJSON:", err)
+		u.logger.Error("Error in UpdateUser ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -86,11 +86,11 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	err := u.userService.UpdateUser(ctx, updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			u.logger.Error("Error in UpdateUser:", err)
+			u.logger.Error("Error in UpdateUser:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		u.logger.Error("Error in UpdateUser:", err)
+		u.logger.Error("Error in UpdateUser:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -98,12 +98,12 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем обновленного пользователя
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
-		u.logger.Error("Error in UpdateUser:", err)
+		u.logger.Error("Error in UpdateUser:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	u.logger.Info("User %v updated successfully", user.Id)
+	u.logger.Info("User updated successfully", "user", user.Id)
 
 	c.JSON(http.StatusOK, gin.H{"updated_user": user})
 }
@@ -134,11 +134,11 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	err := u.userService.DeleteUser(ctx, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			u.logger.Error("Error in DeleteUser:", err)
+			u.logger.Error("Error in DeleteUser:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		u.logger.Error("Error in DeleteUser:", err)
+		u.logger.Error("Error in DeleteUser:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -146,7 +146,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	// сбрасываем куки
 	c.SetCookie("cookie", "1", -1, "/", "", false, false)
 
-	u.logger.Info("User %v deleted successfully", userId)
+	u.logger.Info("User deleted successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"message": "successful"})
 }

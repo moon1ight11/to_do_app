@@ -40,13 +40,13 @@ func NewStorage(cfg *config.Config) (*DataBase, error) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Println("Failed to open database:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to open db: %w", err)
 	}
 
 	err = db.Ping()
 	if err != nil {
 		log.Println("Failed to ping database:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	log.Println("Successfully connected to database")

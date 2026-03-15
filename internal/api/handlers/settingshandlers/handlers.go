@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 	"todoapp/internal/api/models"
-)
+) 
 
 // получение настроек пользователя
 func (s *SettingsHandler) GetSettings(c *gin.Context) {
@@ -36,16 +36,16 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			s.logger.Error("Error in GetSettings:", err)
+			s.logger.Error("Error in GetSettings:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		s.logger.Error("Error in GetSettings:", err)
+		s.logger.Error("Error in GetSettings:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	s.logger.Info("Setting getted successfully by user %v", userId)
+	s.logger.Info("Setting getted successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"settings": settings})
 }
@@ -72,7 +72,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 
 	// получаем настройки с фронта
 	if err := c.ShouldBindJSON(&updatedSettings); err != nil {
-		s.logger.Error("Error in UpdateSettings ShouldBindJSON:", err)
+		s.logger.Error("Error in UpdateSettings ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -85,11 +85,11 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	err := s.settingsService.UpdateSettings(ctx, userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			s.logger.Error("Error in UpdateSettings:", err)
+			s.logger.Error("Error in UpdateSettings:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
 			return
 		}
-		s.logger.Error("Error in UpdateSettings:", err)
+		s.logger.Error("Error in UpdateSettings:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -97,12 +97,12 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// получаем измененные настройки
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
-		s.logger.Error("Error in UpdateSettings:", err)
+		s.logger.Error("Error in UpdateSettings:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	s.logger.Info("Settings updated successfully by user %v", userId)
+	s.logger.Info("Settings updated successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"updated_settings": settings})
 }

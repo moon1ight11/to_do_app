@@ -35,20 +35,20 @@ func main() {
 	// инициализируем конфигурации
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Fatal("Failed to load config:", err)
+		logger.Fatal("Failed to load config:", "error", err)
 	}
 
 	// соединяемся с БД
 	db, err := storage.NewStorage(cfg)
 	if err != nil {
-		logger.Fatal("Failed to load config:", err)
+		logger.Fatal("Failed to connect to db:", "error", err)
 	}
 	defer db.DB.Close()
 
 	// применяем миграций
 	err = db.UpMigrations()
 	if err != nil {
-		logger.Fatal("Failed to upping migrations:", err)
+		logger.Fatal("Failed to upping migrations:", "error", err)
 	}
 
 	// инициализируем jwt
@@ -89,7 +89,7 @@ func main() {
 	 go func() {
         logger.Info("Server is starting on port :8080")
         if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            logger.Error("Failed to run server:", err)
+            logger.Error("Failed to run server:", "error", err)
             serverError <- err
         }
     }()
@@ -104,11 +104,11 @@ func main() {
         defer cancel()
 
         if err := srv.Shutdown(ctx); err != nil {
-            logger.Error("Server forced to shutdown:", err)
+            logger.Error("Server forced to shutdown:", "error", err)
         }
     case err := <-serverError:
 		// еслм пришла ошибка от сервера - фаталим
-        logger.Fatal("Server error:", err)
+        logger.Fatal("Server error:", "error", err)
     }
 
     logger.Info("Server exited")

@@ -21,6 +21,6 @@ type UserRequest struct {
 type UserUpdate struct {
 	Id    uuid.UUID `json:"user_id"`
 	Name  *string   `json:"user_name"`
-	Email *string   `json:"user_email" binding:"required,email"`
+	Email *string   `json:"user_email"`
 	Pass  *string   `json:"user_pass"`
 }
