@@ -6,7 +6,7 @@ info:
 
 servers:
   - url: http://localhost:8080
-    description: Todoapp server
+    description: ToDoApp server
 
 paths:
   /v1/auth/sign-up: 
@@ -19,7 +19,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: "#/components/schemas/UserSignUp"
       responses:
         "201":
           description: Пользователь зарегистрирован
@@ -48,14 +48,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: "#/components/schemas/UserSignIn"
       responses:
         "200":
           description: Пользователь залогинен
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/UserResponse"
         "default":
           description: Ошибка
           content:
@@ -97,7 +97,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/UserResponse"
         "default":
           description: Ошибка
           content:
@@ -121,19 +121,25 @@ paths:
                 user_name:
                   type: string
                   example: John
+                  nullable: true
+                  description: Может быть null, если не изменяется
                 user_pass:
                   type: string
                   example: aaa123
+                  nullable: true
+                  description: Может быть null, если не изменяется
                 user_email:
                   type: string
                   example: John@mail.go
+                  nullable: true
+                  description: Может быть null, если не изменяется
       responses:
         "200":
           description: Обновление информации пользователя прошло успешно
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/UserResponse"
         "default":
           description: Ошибка
           content:
@@ -194,6 +200,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Settings"
+              description: Должно быть заполнено хотябы одно поле
       responses:
         "200":
           description: Изменение настроек прошло успешно
@@ -221,7 +228,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Tasks"
+                $ref: "#/components/schemas/TasksResponse"
         "default":
           description: Ошибка
           content:
@@ -240,9 +247,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Task"
+              $ref: "#/components/schemas/TaskRequest"
       responses:
-        "200":
+        "201":
           description: Задача создана успешно
           content:
             application/json:
@@ -276,7 +283,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Task"
+                $ref: "#/components/schemas/TaskResponse"
         "default":
           description: Ошибка
           content:
@@ -303,14 +310,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Task"
+              $ref: "#/components/schemas/TaskRequest"
+              description: Должно быть заполнено хотябы одно поле
+
       responses:
         "200":
           description: Задача успешно изменена
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SuccessResponse"
+                $ref: "#/components/schemas/TaskResponse"
         "default":
           description: Ошибка
           content:
@@ -355,12 +364,9 @@ components:
       description: Cookie-based аутентификация
 
   schemas:
-    User:
+    UserSignUp:
       type: object
       properties:
-        user_id:
-          type: string
-          example: b6609ddd-95f4-42f0-993e-7f07f3fa1d5b
         user_name:
           type: string
           example: John
@@ -371,17 +377,40 @@ components:
           type: string
           example: John@mail.go
 
+    UserSignIn:
+      type: object
+      properties:
+        user_pass:
+          type: string
+          example: aaa123
+        user_email:
+          type: string
+          example: John@mail.go
+
+    UserResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: b6609ddd-95f4-42f0-993e-7f07f3fa1d5b
+        user_name:
+          type: string
+          example: John
+        user_email:
+          type: string
+          example: John@mail.go
+
     Settings:
       type: object
       properties:
-        default_tz:
+        time_duration:
           type: string
-          example: UTC
-        default_duration:
+          example: UTC+1
+        user_tz:
           type: integer
           example: 43200
 
-    Task:
+    TaskResponse:
       type: object
       properties:
         task_id:
@@ -413,12 +442,36 @@ components:
         subtasks:
           type: array
           items:
-            $ref: "#/components/schemas/Task"
+            $ref: "#/components/schemas/TaskResponse"
 
-    Tasks:
+    TasksResponse:
       type: array
       items:
-        $ref: "#/components/schemas/Task"
+        $ref: "#/components/schemas/TaskResponse"
+
+    TaskRequest:
+      type: object
+      properties:
+        parent_id:
+          type: string
+          example: b6609ddd-95f4-42f0-993e-7f07f3fa1d5b
+        start_at:
+          type: string
+          format: date-time
+          example: 2025-10-11T18:52:19.674Z
+        end_at:
+          type: string
+          format: date-time
+          example: 2025-10-11T18:52:19.674Z
+        title:
+          type: string
+          example: Название
+        description:
+          type: string
+          example: Описание
+        completed_at:
+          type: boolean
+          example: true
 
     Error:
       type: object
@@ -436,4 +489,4 @@ components:
       properties:
         message:
           type: string
-          example: success
+          example: successful
