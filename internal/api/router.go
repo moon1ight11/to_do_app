@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"todoapp/internal/api/handlers/authhandlers"
 	"todoapp/internal/api/handlers/settingshandlers"
@@ -33,15 +32,6 @@ func NewRouter(
 		authHandler:     authHandler,
 		ginEngine:       gin.Default(),
 	}
-}
-
-func (r *Router) Run() error {
-	err := r.ginEngine.Run(":8080")
-	if err != nil {
-		return fmt.Errorf("error in run router: %w", err)
-	}
-
-	return nil
 }
 
 func (r *Router) Init(jwtService jwt.TokenService, logger *logger.Logger) {
@@ -87,4 +77,8 @@ func (r *Router) Init(jwtService jwt.TokenService, logger *logger.Logger) {
 	privateGroup.PATCH("/tasks/:task_id", r.tasksHandler.UpdateTask)
 	// удаление задачи
 	privateGroup.DELETE("/tasks/:task_id", r.tasksHandler.DeleteTask)
+}
+
+func (r *Router) GetEngine() *gin.Engine {
+    return r.ginEngine
 }

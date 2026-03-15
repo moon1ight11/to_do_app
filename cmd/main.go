@@ -1,6 +1,12 @@
 package main
 
 import (
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"todoapp/internal/api"
 	"todoapp/internal/api/handlers/authhandlers"
 	"todoapp/internal/api/handlers/settingshandlers"
@@ -19,35 +25,36 @@ import (
 )
 
 func main() {
-	// создание логгера с записью в файл
+	// создаем логгер с записью в файл
 	logger, err := logger.New("logs/ToDoApp.log")
 	if err != nil {
 		panic(err)
 	}
-
 	defer logger.Close()
-	// инициализация конфигурации
+
+	// инициализируем конфигурации
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Fatal("Failed to load config:", err)
 	}
 
-	// соединение с БД
+	// соединяемся с БД
 	db, err := storage.NewStorage(cfg)
 	if err != nil {
 		logger.Fatal("Failed to load config:", err)
 	}
+	defer db.DB.Close()
 
-	// применение миграций
+	// применяем миграций
 	err = db.UpMigrations()
 	if err != nil {
 		logger.Fatal("Failed to upping migrations:", err)
 	}
 
-	// инициализация jwt
+	// инициализируем jwt
 	jwtService := jwt.NewJWTService(cfg.JWT.Secret, cfg.JWT.Expiration)
 
-	// инициализация зависимостей
+	// инициализируем зависимости
 	userRepo := usersrepos.NewUserRepo(db)
 	userService := usersservice.NewUserService(userRepo)
 	userHandler := usershandlers.NewUserHandler(userService, logger)
@@ -61,15 +68,48 @@ func main() {
 	tasksService := tasksservice.NewTasksService(tasksRepo)
 	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger)
 
-	// инициализация роутера
+	// инициализируем роутер
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)
 
-	// инициализация роутов
+	// инициализируем роуты
 	router.Init(jwtService, logger)
 
-	// запуск роутера
-	err = router.Run()
-	if err != nil {
-		logger.Fatal("Failed to run Gin router:", err)
+	// Создаем HTTP сервер
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router.GetEngine(),
 	}
+
+	// создаем каналы для сигналов завершения и ошибки сервера
+	quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    serverError := make(chan error, 1)
+
+	// запуск сервера
+	 go func() {
+        logger.Info("Server is starting on port :8080")
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            logger.Error("Failed to run server:", err)
+            serverError <- err
+        }
+    }()
+
+	// ждем сигналы
+	select {
+    case <-quit:
+		// если поступил сигнал завершения - делаем шатдаун с таймаутом
+        logger.Info("Shutting down server...")
+
+        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+        defer cancel()
+
+        if err := srv.Shutdown(ctx); err != nil {
+            logger.Error("Server forced to shutdown:", err)
+        }
+    case err := <-serverError:
+		// еслм пришла ошибка от сервера - фаталим
+        logger.Fatal("Server error:", err)
+    }
+
+    logger.Info("Server exited")
 }
