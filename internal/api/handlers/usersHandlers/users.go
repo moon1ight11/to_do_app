@@ -1,16 +1,16 @@
 package usershandlers
 
 import (
-	"todoapp/internal/services/usersservice"
+	"todoapp/internal/services"
 	"todoapp/pkg/logger"
 )
 
 type UserHandler struct {
-	userService *usersservice.UserService
+	userService services.UsersServiceInterface
 	logger      *logger.Logger
 }
 
-func NewUserHandler(userService *usersservice.UserService, logger *logger.Logger) *UserHandler {
+func NewUserHandler(userService services.UsersServiceInterface, logger *logger.Logger) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 		logger:      logger,

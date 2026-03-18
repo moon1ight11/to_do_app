@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
 )
 
@@ -111,7 +112,16 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 
 // разлогин
 func (u *AuthHandler) SignOut(c *gin.Context) {
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		u.logger.Error("Error in SignOut:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.SetCookie("cookie", "1", -1, "/", "", false, false)
+
+	u.logger.Info("User SignOut successful", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"message": "successful"})
 }

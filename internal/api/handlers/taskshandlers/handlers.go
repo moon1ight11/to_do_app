@@ -7,24 +7,17 @@ import (
 	"github.com/google/uuid"
 	"net/http"
 	"time"
+	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
 )
 
 // создание задачи
 func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		t.logger.Error("Error in CreateTask: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		t.logger.Error("Error in CreateTask: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		t.logger.Error("Error in CreateTask:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -45,7 +38,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	defer cancel()
 
 	// добавляем задачу
-	err := t.taskService.CreateTask(ctx, task)
+	err = t.taskService.CreateTask(ctx, task)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in CreateTask:", "error", err)
@@ -65,18 +58,10 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 // получение списка задач пользователя
 func (t *TasksHandler) GetTasks(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		t.logger.Error("Error in GetTasks: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		t.logger.Error("Error in GetTasks: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		t.logger.Error("Error in GetTasks:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -105,18 +90,10 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 // получение одной задачи по id
 func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		t.logger.Error("Error in GetTaskById: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		t.logger.Error("Error in GetTaskById: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		t.logger.Error("Error in GetTaskById:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -154,18 +131,10 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 // изменение полей задач
 func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		t.logger.Error("Error in UpdateTask: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		t.logger.Error("Error in UpdateTask: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		t.logger.Error("Error in UpdateTask:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -230,18 +199,10 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 // удаление задачи
 func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		t.logger.Error("Error in DeleteTask: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		t.logger.Error("Error in DeleteTask: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		t.logger.Error("Error in DeleteTask:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 

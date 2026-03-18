@@ -1,16 +1,16 @@
 package taskshandlers
 
 import (
-	"todoapp/internal/services/tasksservice"
+	"todoapp/internal/services"
 	"todoapp/pkg/logger"
 )
 
 type TasksHandler struct {
-	taskService *tasksservice.TasksService
+	taskService services.TasksServiceInterface
 	logger *logger.Logger
 }
 
-func NewTasksHandler(taskService *tasksservice.TasksService, logger *logger.Logger) *TasksHandler {
+func NewTasksHandler(taskService services.TasksServiceInterface, logger *logger.Logger) *TasksHandler {
 	return &TasksHandler{
 		taskService: taskService,
 		logger: logger,

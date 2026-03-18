@@ -4,27 +4,19 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 	"time"
+	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
 )
 
 // получение данных пользователя
 func (u *UserHandler) GetUser(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		u.logger.Error("Error in GetUser: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		u.logger.Error("Error in GetUser: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		u.logger.Error("Error in GetUser:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -53,18 +45,10 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 // обновление параметров пользователя
 func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		u.logger.Error("Error in UpdateUser: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		u.logger.Error("Error in UpdateUser: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		u.logger.Error("Error in UpdateUser:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -83,7 +67,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	defer cancel()
 
 	// обновляем нужные поля
-	err := u.userService.UpdateUser(ctx, updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
+	err = u.userService.UpdateUser(ctx, updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in UpdateUser:", "error", err)
@@ -111,18 +95,10 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 // удаление пользователя
 func (u *UserHandler) DeleteUser(c *gin.Context) {
 	// получаем id из контекста
-	userIDValue, exist := c.Get("UserId")
-	if !exist {
-		u.logger.Error("Error in DeleteUser: user ID not found in context")
-		c.JSON(http.StatusForbidden, gin.H{"error": "User ID not found"})
-		return
-	}
-
-	// приводим значение к uuid
-	userId, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		u.logger.Error("Error in DeleteUser: invalid user ID type")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID type"})
+	userId, err := helpers.GetUserIdFromContext(c)
+	if err != nil {
+		u.logger.Error("Error in DeleteUser:", "error", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -131,7 +107,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	defer cancel()
 
 	// удаляем пользователя
-	err := u.userService.DeleteUser(ctx, userId)
+	err = u.userService.DeleteUser(ctx, userId)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in DeleteUser:", "error", err)

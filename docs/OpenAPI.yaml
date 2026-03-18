@@ -64,7 +64,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /v1/auth/sign-out:
-    get:
+    post:
       summary: Метод для деаутентификации
       tags:
         - Auth
@@ -207,7 +207,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Settings"
+                $ref: "#/components/schemas/SettingsUpdate"
         "default":
           description: Ошибка
           content:
@@ -404,11 +404,23 @@ components:
       type: object
       properties:
         time_duration:
-          type: string
-          example: UTC+1
-        user_tz:
           type: integer
           example: 43200
+        user_tz:
+          type: string
+          example: UTC+1
+
+    SettingsUpdate:
+      type: object
+      properties:
+        time_duration:
+          type: integer
+          example: 43200
+          nullable: true
+        user_tz:
+          type: string
+          example: UTC+1
+          nullable: true
 
     TaskResponse:
       type: object

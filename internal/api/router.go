@@ -2,28 +2,25 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"todoapp/internal/api/handlers/authhandlers"
-	"todoapp/internal/api/handlers/settingshandlers"
-	"todoapp/internal/api/handlers/taskshandlers"
-	"todoapp/internal/api/handlers/usershandlers"
+	"todoapp/internal/api/handlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
 	"todoapp/pkg/logger"
 )
 
 type Router struct {
-	userHandler     *usershandlers.UserHandler
-	settingsHandler *settingshandlers.SettingsHandler
-	tasksHandler    *taskshandlers.TasksHandler
-	authHandler     *authhandlers.AuthHandler
+	userHandler     handlers.UserHandlerInterface
+	settingsHandler handlers.SettingsHandlerInterface
+	tasksHandler    handlers.TaskHandlerInterface
+	authHandler     handlers.AuthHandlerInterface
 	ginEngine       *gin.Engine
 }
 
 func NewRouter(
-	userHandler *usershandlers.UserHandler,
-	settingsHandler *settingshandlers.SettingsHandler,
-	tasksHandler *taskshandlers.TasksHandler,
-	authHandler *authhandlers.AuthHandler,
+	userHandler handlers.UserHandlerInterface,
+	settingsHandler handlers.SettingsHandlerInterface,
+	tasksHandler handlers.TaskHandlerInterface,
+	authHandler handlers.AuthHandlerInterface,
 ) *Router {
 	return &Router{
 		userHandler:     userHandler,
@@ -50,7 +47,7 @@ func (r *Router) Init(jwtService jwt.TokenService, logger *logger.Logger) {
 	// авторизация
 	authGroup.POST("/sign-in", r.authHandler.SignIn)
 	// разлогин
-	authGroup.GET("/sign-out", r.authHandler.SignOut)
+	authGroup.POST("/sign-out", r.authHandler.SignOut)
 
 	// ЮЗЕРЫ //
 	// получение данных пользователя
@@ -80,5 +77,5 @@ func (r *Router) Init(jwtService jwt.TokenService, logger *logger.Logger) {
 }
 
 func (r *Router) GetEngine() *gin.Engine {
-    return r.ginEngine
+	return r.ginEngine
 }
