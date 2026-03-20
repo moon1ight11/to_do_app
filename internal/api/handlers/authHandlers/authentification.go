@@ -9,10 +9,10 @@ import (
 type AuthHandler struct {
 	userService services.UsersServiceInterface
 	jwtService  jwt.TokenService
-	logger      *logger.Logger
+	logger      logger.LoggerInterface
 }
 
-func NewAuthHandler(userService services.UsersServiceInterface, jwtService jwt.TokenService, logger *logger.Logger) *AuthHandler {
+func NewAuthHandler(userService services.UsersServiceInterface, jwtService jwt.TokenService, logger logger.LoggerInterface) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		jwtService:  jwtService,

@@ -7,10 +7,10 @@ import (
 
 type SettingsHandler struct {
 	settingsService services.SettingsServiceInterface
-	logger          *logger.Logger
+	logger          logger.LoggerInterface
 }
 
-func NewSettingsHandler(settingsService services.SettingsServiceInterface, logger *logger.Logger) *SettingsHandler {
+func NewSettingsHandler(settingsService services.SettingsServiceInterface, logger logger.LoggerInterface) *SettingsHandler {
 	return &SettingsHandler{
 		settingsService: settingsService,
 		logger:          logger,

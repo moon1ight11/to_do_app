@@ -31,7 +31,7 @@ func NewRouter(
 	}
 }
 
-func (r *Router) Init(jwtService jwt.TokenService, logger *logger.Logger) {
+func (r *Router) Init(jwtService jwt.TokenService, logger logger.LoggerInterface) {
 	r.ginEngine.Use(middleware.CORS())
 
 	// группировка роутов

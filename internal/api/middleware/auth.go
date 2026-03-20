@@ -8,7 +8,7 @@ import (
 )
 
 // мидлвар аутентификации
-func Auth(jwtService jwt.TokenService, logger *logger.Logger) gin.HandlerFunc {
+func Auth(jwtService jwt.TokenService, logger logger.LoggerInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer c.Next()
 

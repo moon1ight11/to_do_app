@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,6 +26,14 @@ import (
 )
 
 func main() {
+	// обработка паники
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Panic recovered: %v\n", r)
+			os.Exit(1)
+		}
+	}()
+
 	// создаем логгер с записью в файл
 	logger, err := logger.New("logs/ToDoApp.log")
 	if err != nil {
@@ -82,34 +91,34 @@ func main() {
 
 	// создаем каналы для сигналов завершения и ошибки сервера
 	quit := make(chan os.Signal, 1)
-    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-    serverError := make(chan error, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	serverError := make(chan error, 1)
 
 	// запуск сервера
-	 go func() {
-        logger.Info("Server is starting on port :8080")
-        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            logger.Error("Failed to run server:", "error", err)
-            serverError <- err
-        }
-    }()
+	go func() {
+		logger.Info("Server is starting on port :8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("Failed to run server:", "error", err)
+			serverError <- err
+		}
+	}()
 
 	// ждем сигналы
 	select {
-    case <-quit:
+	case <-quit:
 		// если поступил сигнал завершения - делаем шатдаун с таймаутом
-        logger.Info("Shutting down server...")
+		logger.Info("Shutting down server...")
 
-        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-        defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-        if err := srv.Shutdown(ctx); err != nil {
-            logger.Error("Server forced to shutdown:", "error", err)
-        }
-    case err := <-serverError:
+		if err := srv.Shutdown(ctx); err != nil {
+			logger.Error("Server forced to shutdown:", "error", err)
+		}
+	case err := <-serverError:
 		// еслм пришла ошибка от сервера - фаталим
-        logger.Fatal("Server error:", "error", err)
-    }
+		logger.Fatal("Server error:", "error", err)
+	}
 
-    logger.Info("Server exited")
+	logger.Info("Server exited")
 }

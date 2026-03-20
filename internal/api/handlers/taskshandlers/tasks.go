@@ -7,10 +7,10 @@ import (
 
 type TasksHandler struct {
 	taskService services.TasksServiceInterface
-	logger *logger.Logger
+	logger logger.LoggerInterface
 }
 
-func NewTasksHandler(taskService services.TasksServiceInterface, logger *logger.Logger) *TasksHandler {
+func NewTasksHandler(taskService services.TasksServiceInterface, logger logger.LoggerInterface) *TasksHandler {
 	return &TasksHandler{
 		taskService: taskService,
 		logger: logger,
