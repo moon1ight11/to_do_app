@@ -8,10 +8,15 @@ database:
   host: "localhost"
   port: 15432
   name: "todoapp"
-  user: "fedor"
-  password: "fedor_pass"
+  user: "your_user_name"
+  password: "your_database_password"
   migrationsDir: "./internal/storage/migrations"
 
 jwt:
-  secret: "1129qwerty!2911"
+  secret: "your_jwt_secret"
   expiration: "24h"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: "your_redis_password"
