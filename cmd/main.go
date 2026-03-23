@@ -19,6 +19,7 @@ import (
 	"todoapp/internal/services/tasksservice"
 	"todoapp/internal/services/usersservice"
 	"todoapp/internal/storage"
+	"todoapp/internal/storage/cache"
 	"todoapp/internal/storage/repos/settingsrepos"
 	"todoapp/internal/storage/repos/tasksrepos"
 	"todoapp/internal/storage/repos/usersrepos"
@@ -60,22 +61,35 @@ func main() {
 		logger.Fatal("Failed to upping migrations:", "error", err)
 	}
 
+	// подключаемся к редис
+	redisClient, err := storage.NewRedisClient(cfg)
+	if err != nil {
+		logger.Error("Failed to connect to Redis:", "error", err)
+	}
+	defer redisClient.Close()
+
+	// инициализируем кэш
+	var cacheService *cache.CacheService
+	if redisClient != nil {
+		cacheService = cache.NewCacheService(redisClient.Client)
+	}
+
 	// инициализируем jwt
 	jwtService := jwt.NewJWTService(cfg.JWT.Secret, cfg.JWT.Expiration)
 
 	// инициализируем зависимости
 	userRepo := usersrepos.NewUserRepo(db)
 	userService := usersservice.NewUserService(userRepo)
-	userHandler := usershandlers.NewUserHandler(userService, logger)
+	userHandler := usershandlers.NewUserHandler(userService, logger, cacheService)
 	authHandler := authhandlers.NewAuthHandler(userService, jwtService, logger)
-
+ 
 	settingsRepo := settingsrepos.NewSettingsRepo(db)
 	settingsService := settingsservice.NewSettingsService(settingsRepo)
-	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, logger)
+	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, logger, cacheService)
 
 	tasksRepo := tasksrepos.NewTasksRepo(db)
 	tasksService := tasksservice.NewTasksService(tasksRepo)
-	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger)
+	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger, cacheService)
 
 	// инициализируем роутер
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)

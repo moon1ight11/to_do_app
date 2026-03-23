@@ -3,16 +3,22 @@ package taskshandlers
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"fmt"
 	"net/http"
 	"time"
 	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // создание задачи
 func (t *TasksHandler) CreateTask(c *gin.Context) {
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
@@ -33,10 +39,6 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// устанавливаем ownerId
 	task.OwnerId = userId
 
-	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
 	// добавляем задачу
 	err = t.taskService.CreateTask(ctx, task)
 	if err != nil {
@@ -50,6 +52,14 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 		return
 	}
 
+	// инвалидируем список задач пользователя
+	if t.cacheService != nil {
+		cacheKey := fmt.Sprintf("user_tasks:%s", userId.String())
+		if err := t.cacheService.Delete(ctx, cacheKey); err != nil {
+			t.logger.Error("Failed to invalidate tasks cache", "key", cacheKey, "error", err)
+		}
+	}
+
 	t.logger.Info("Task created successfully", "user", userId)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "successful"})
@@ -57,6 +67,10 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 
 // получение списка задач пользователя
 func (t *TasksHandler) GetTasks(c *gin.Context) {
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
@@ -65,9 +79,17 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 		return
 	}
 
-	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
+	cacheKey := fmt.Sprintf("user_tasks:%s", userId.String())
+
+	// пробуем получить из кэша
+	if t.cacheService != nil {
+		var cachedTasks []models.Task
+		err := t.cacheService.Get(ctx, cacheKey, &cachedTasks)
+		if err == nil {
+			c.JSON(http.StatusOK, gin.H{"tasks": cachedTasks})
+			return
+		}
+	}
 
 	// получаем задачи
 	tasks, err := t.taskService.GetAllTasks(ctx, userId)
@@ -82,6 +104,13 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 		return
 	}
 
+	// сохраняем список задач в кэш
+	if t.cacheService != nil {
+		if err := t.cacheService.Set(ctx, cacheKey, tasks, 10*time.Minute); err != nil {
+			t.logger.Error("Failed to set cache", "key", cacheKey, "error", err)
+		}
+	}
+
 	t.logger.Info("Tasks getted successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"tasks": tasks})
@@ -89,6 +118,10 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 
 // получение одной задачи по id
 func (t *TasksHandler) GetTaskById(c *gin.Context) {
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
@@ -106,9 +139,23 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 		return
 	}
 
-	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
+	// ключ для кэша
+	cacheKey := fmt.Sprintf("task:%s", taskId.String())
+
+	// пробуем найти настройки в кэше
+	if t.cacheService != nil {
+		var cachedTask models.Task
+
+		err := t.cacheService.Get(ctx, cacheKey, &cachedTask)
+		if err == nil {
+			t.logger.Info("Task retrieved from cache", "user", userId)
+			c.JSON(http.StatusOK, gin.H{"task": cachedTask})
+			return
+		}
+
+		// если нет - идем в БД
+		t.logger.Info("Cache miss for task", "key", cacheKey, "error", err)
+	}
 
 	// получаем задачу
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
@@ -123,6 +170,13 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 		return
 	}
 
+	// сохраняем в кэш
+	if t.cacheService != nil {
+		if err := t.cacheService.Set(ctx, cacheKey, task, 10*time.Minute); err != nil {
+			t.logger.Error("Failed to set cache", "key", cacheKey, "error", err)
+		}
+	}
+
 	t.logger.Info("One task getted successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"task": task})
@@ -130,6 +184,10 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 
 // изменение полей задач
 func (t *TasksHandler) UpdateTask(c *gin.Context) {
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
@@ -157,10 +215,6 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 
 	// указываем, какая задача должна быть изменена
 	updatedTask.Id = &taskId
-
-	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
 
 	// меняем необходимые поля
 	err = t.taskService.ChangeTask(
@@ -191,6 +245,20 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 		return
 	}
 
+	if t.cacheService != nil {
+		// удаляем кэш конкретно этой задачи
+		taskCacheKey := fmt.Sprintf("task:%s", taskId.String())
+		if err := t.cacheService.Delete(ctx, taskCacheKey); err != nil {
+			t.logger.Error("Failed to invalidate task cache", "key", taskCacheKey, "error", err)
+		}
+
+		// список задач также удаляем
+		userTasksCacheKey := fmt.Sprintf("user_tasks:%s", userId.String())
+		if err := t.cacheService.Delete(ctx, userTasksCacheKey); err != nil {
+			t.logger.Error("Failed to invalidate user tasks cache", "key", userTasksCacheKey, "error", err)
+		}
+	}
+
 	t.logger.Info("Task updated successfully", "task", taskId, "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"updated_task": task})
@@ -198,6 +266,10 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 
 // удаление задачи
 func (t *TasksHandler) DeleteTask(c *gin.Context) {
+	// создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
@@ -215,10 +287,6 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
 	// процесс удаления задачи и ее подзадач
 	err = t.taskService.DeleteTask(ctx, taskId, userId)
 	if err != nil {
@@ -230,6 +298,19 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 		t.logger.Error("Error in DeleteTask:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// удаляем из кэша конкретную задачу и список задач
+	if t.cacheService != nil {
+		taskCacheKey := fmt.Sprintf("task:%s", taskId.String())
+		if err := t.cacheService.Delete(ctx, taskCacheKey); err != nil {
+			t.logger.Error("Failed to invalidate task cache", "key", taskCacheKey, "error", err)
+		}
+
+		userTasksCacheKey := fmt.Sprintf("user_tasks:%s", userId.String())
+		if err := t.cacheService.Delete(ctx, userTasksCacheKey); err != nil {
+			t.logger.Error("Failed to invalidate user tasks cache", "key", userTasksCacheKey, "error", err)
+		}
 	}
 
 	t.logger.Info("Task deleted successfully", "task", taskId, "user", userId)

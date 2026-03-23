@@ -1,11 +1,12 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"todoapp/internal/api/handlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
 	"todoapp/pkg/logger"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Router struct {
