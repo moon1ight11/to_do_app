@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"todoapp/internal/config"
 )
 
 // структура логгера
@@ -15,15 +16,15 @@ type Logger struct {
 }
 
 // конструктор логгера
-func New(logPath string) (*Logger, error) {
-	dir := filepath.Dir(logPath)
+func New(cfg *config.Config) (*Logger, error) {
+	dir := filepath.Dir(cfg.Logger.FilePath)
 	if dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
 	}
 
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(cfg.Logger.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}

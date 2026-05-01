@@ -8,6 +8,7 @@ type Config struct {
 	Database    DatabaseConfig `mapstructure:"database"`
 	JWT         JWTConfig      `mapstructure:"jwt"`
 	Redis       RedisConfig    `mapstructure:"redis"`
+	Logger      LoggerConfig   `mapstructure:"logger"`
 }
 
 type RedisConfig struct {
@@ -34,4 +35,8 @@ type DatabaseConfig struct {
 type JWTConfig struct {
 	Secret     string        `mapstructure:"secret"`
 	Expiration time.Duration `mapstructure:"expiration"`
+}
+
+type LoggerConfig struct {
+	FilePath string `mapstructure:"file_path"`
 }
