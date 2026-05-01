@@ -8,6 +8,9 @@ import (
 
 // получение пользователя по id
 func (db *Repo) UserById(ctx context.Context, userId uuid.UUID) (User, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.UserById")
+	defer span.End()
+
 	query := `
 				SELECT id, name, email, pass
 				FROM todo_app.users
@@ -16,6 +19,7 @@ func (db *Repo) UserById(ctx context.Context, userId uuid.UUID) (User, error) {
 	var user User
 	err := db.DB.QueryRowContext(ctx, query, userId).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
 	if err != nil {
+		span.RecordError(err)
 		return User{}, fmt.Errorf("error in UserById query: %w", err)
 	}
 
@@ -24,6 +28,9 @@ func (db *Repo) UserById(ctx context.Context, userId uuid.UUID) (User, error) {
 
 // получение пользователя по почте
 func (db *Repo) UserByEmail(ctx context.Context, userEmail string) (User, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.UserByEmail")
+	defer span.End()
+
 	query := `
 				SELECT id, name, email, pass
 				FROM todo_app.users
@@ -32,6 +39,7 @@ func (db *Repo) UserByEmail(ctx context.Context, userEmail string) (User, error)
 	var user User
 	err := db.DB.QueryRowContext(ctx, query, userEmail).Scan(&user.Id, &user.Name, &user.Email, &user.Pass)
 	if err != nil {
+		span.RecordError(err)
 		return User{}, fmt.Errorf("error in UserByEmail query: %w", err)
 	}
 
@@ -40,6 +48,9 @@ func (db *Repo) UserByEmail(ctx context.Context, userEmail string) (User, error)
 
 // проверка занятости имени пользователя
 func (db *Repo) CheckUserName(ctx context.Context, name string) (bool, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.CheckUserName")
+	defer span.End()
+
 	query := `
 				SELECT EXISTS(
 					SELECT 1
@@ -50,6 +61,7 @@ func (db *Repo) CheckUserName(ctx context.Context, name string) (bool, error) {
 
 	err := db.DB.QueryRowContext(ctx, query, name).Scan(&exist)
 	if err != nil {
+		span.RecordError(err)
 		return false, fmt.Errorf("error in CheckUserName query: %w", err)
 	}
 
@@ -58,6 +70,9 @@ func (db *Repo) CheckUserName(ctx context.Context, name string) (bool, error) {
 
 // проверка занятости почты
 func (db *Repo) CheckUserEmail(ctx context.Context, email string) (bool, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.CheckUserEmail")
+	defer span.End()
+
 	query := `
 				SELECT EXISTS(
 					SELECT 1
@@ -68,6 +83,7 @@ func (db *Repo) CheckUserEmail(ctx context.Context, email string) (bool, error) 
 
 	err := db.DB.QueryRowContext(ctx, query, email).Scan(&exist)
 	if err != nil {
+		span.RecordError(err)
 		return false, fmt.Errorf("error in CheckUserEmail query: %w", err)
 	}
 

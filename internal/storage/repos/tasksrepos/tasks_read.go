@@ -8,6 +8,9 @@ import (
 
 // отображение всех родительских задач пользователя
 func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.TasksByOwnerId")
+	defer span.End()
+
 	query := `
 				SELECT id, title, description, owner_id, start_at, end_at, completed_at IS NOT NULL as completed
 				FROM todo_app.tasks
@@ -17,6 +20,7 @@ func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, 
 	var tasks []Task
 	rows, err := db.DB.QueryContext(ctx, query, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return nil, fmt.Errorf("error in TasksByOwnerId query: %w", err)
 	}
 	defer rows.Close()
@@ -33,6 +37,7 @@ func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, 
 			&task.CompletedAt,
 		)
 		if err != nil {
+			span.RecordError(err)
 			return nil, fmt.Errorf("error in TasksByOwnerId scan: %w", err)
 		}
 		tasks = append(tasks, task)
@@ -42,6 +47,9 @@ func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, 
 
 // отображение всех подзадач одной родительской задачи пользователя
 func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentId uuid.UUID) ([]Task, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.SubtasksByTaskId")
+	defer span.End()
+
 	query := `
 				SELECT id, parent_task_id, title, description, owner_id, start_at, end_at,
 				completed_at IS NOT NULL as completed
@@ -52,6 +60,7 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 	var tasks []Task
 	rows, err := db.DB.QueryContext(ctx, query, ownerId, parentId)
 	if err != nil {
+		span.RecordError(err)
 		return nil, fmt.Errorf("error in SubtasksByTaskId query: %w", err)
 	}
 	defer rows.Close()
@@ -69,6 +78,7 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 			&task.CompletedAt,
 		)
 		if err != nil {
+			span.RecordError(err)
 			return nil, fmt.Errorf("error in SubtasksByTaskId scan: %w", err)
 		}
 		tasks = append(tasks, task)
@@ -78,6 +88,9 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 
 // поиск задачи по id
 func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID) (Task, error) {
+	ctx, span := db.tracer.Start(ctx, "repo.TaskById")
+	defer span.End()
+
 	query := `
 				SELECT id, title, description, owner_id, start_at, end_at, parent_task_id
 				FROM todo_app.tasks
@@ -101,6 +114,7 @@ func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUI
 	)
 
 	if err != nil {
+		span.RecordError(err)
 		return Task{}, fmt.Errorf("error in TaskById query: %w", err)
 	}
 

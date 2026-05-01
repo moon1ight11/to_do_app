@@ -29,4 +29,5 @@ func Load() (*Config, error) {
 // дефолтные значения полей конфигурации
 func setDefaults() {
 	viper.SetDefault("environment", "development")
+	viper.SetDefault("service_name", "ToDoApp")
 }

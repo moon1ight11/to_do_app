@@ -14,13 +14,17 @@ import (
 
 // получение данных пользователя
 func (u *UserHandler) GetUser(c *gin.Context) {
+	ctx, span := u.tracer.Start(c.Request.Context(), "handler.GetUser")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		u.logger.Error("Error in GetUser:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -47,6 +51,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 	// получаем пользователя
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in GetUser:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -71,9 +76,13 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 
 // обновление параметров пользователя
 func (u *UserHandler) UpdateUser(c *gin.Context) {
+	ctx, span := u.tracer.Start(c.Request.Context(), "handler.UpdateUser")
+	defer span.End()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		u.logger.Error("Error in UpdateUser:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -84,18 +93,20 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 
 	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&updatedUser); err != nil {
+		span.RecordError(err)
 		u.logger.Error("Error in UpdateUser ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// обновляем нужные поля
 	err = u.userService.UpdateUser(ctx, updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in UpdateUser:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -118,6 +129,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем обновленного пользователя
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		u.logger.Error("Error in UpdateUser:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -137,21 +149,26 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 
 // удаление пользователя
 func (u *UserHandler) DeleteUser(c *gin.Context) {
+	ctx, span := u.tracer.Start(c.Request.Context(), "handler.DeleteUser")
+	defer span.End()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		u.logger.Error("Error in DeleteUser:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// удаляем пользователя
 	err = u.userService.DeleteUser(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in DeleteUser:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})

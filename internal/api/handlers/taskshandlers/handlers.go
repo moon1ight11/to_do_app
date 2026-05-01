@@ -15,13 +15,17 @@ import (
 
 // создание задачи
 func (t *TasksHandler) CreateTask(c *gin.Context) {
+	ctx, span := t.tracer.Start(c.Request.Context(), "handler.CreateTask")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in CreateTask:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -31,6 +35,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 
 	// получаем задачу с фронта
 	if err := c.ShouldBindJSON(&task); err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in CreateTask ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -42,6 +47,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// добавляем задачу
 	err = t.taskService.CreateTask(ctx, task)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in CreateTask:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -67,13 +73,17 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 
 // получение списка задач пользователя
 func (t *TasksHandler) GetTasks(c *gin.Context) {
+	ctx, span := t.tracer.Start(c.Request.Context(), "handler.GetTasks")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in GetTasks:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -98,6 +108,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	// получаем задачи
 	tasks, err := t.taskService.GetAllTasks(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in GetTasks:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -122,13 +133,17 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 
 // получение одной задачи по id
 func (t *TasksHandler) GetTaskById(c *gin.Context) {
+	ctx, span := t.tracer.Start(c.Request.Context(), "handler.GetTaskById")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in GetTaskById:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -138,6 +153,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in parse uuid in GetTaskById:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -164,6 +180,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем задачу
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in GetTaskById:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -188,13 +205,17 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 
 // изменение полей задач
 func (t *TasksHandler) UpdateTask(c *gin.Context) {
+	ctx, span := t.tracer.Start(c.Request.Context(), "handler.UpdateTask")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in UpdateTask:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -203,6 +224,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	var updatedTask models.Task
 	// получаем измененную задачу с фронта
 	if err := c.ShouldBindJSON(&updatedTask); err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in UpdateTask ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -212,6 +234,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in parse uuid in UpdateTask:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -232,6 +255,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 		updatedTask.CompletedAt,
 	)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in UpdateTask:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -244,6 +268,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in UpdateTask:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -270,13 +295,17 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 
 // удаление задачи
 func (t *TasksHandler) DeleteTask(c *gin.Context) {
+	ctx, span := t.tracer.Start(c.Request.Context(), "handler.DeleteTask")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in DeleteTask:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -286,6 +315,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
+		span.RecordError(err)
 		t.logger.Error("Error in parse uuid in DeleteTask:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -294,6 +324,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// процесс удаления задачи и ее подзадач
 	err = t.taskService.DeleteTask(ctx, taskId, userId)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in DeleteTask:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})

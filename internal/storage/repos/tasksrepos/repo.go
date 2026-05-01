@@ -1,13 +1,18 @@
 package tasksrepos
 
 import (
+	"go.opentelemetry.io/otel/trace"
 	"todoapp/internal/storage"
 )
 
 type Repo struct {
 	storage.DataBase
+	tracer trace.Tracer
 }
 
-func NewTasksRepo(db *storage.DataBase) *Repo {
-	return &Repo{DataBase: *db}
+func NewTasksRepo(db *storage.DataBase, tracer trace.Tracer) *Repo {
+	return &Repo{
+		DataBase: *db,
+		tracer:   tracer,
+	}
 }

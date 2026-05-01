@@ -14,13 +14,17 @@ import (
 
 // получение настроек пользователя
 func (s *SettingsHandler) GetSettings(c *gin.Context) {
+	ctx, span := s.tracer.Start(c.Request.Context(), "handler.GetSettings")
+	defer span.End()
+
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		s.logger.Error("Error in GetSettings:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -47,6 +51,7 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 	// находим настройки по id
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			s.logger.Error("Error in GetSettings:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -71,9 +76,13 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 
 // изменение настроек пользователя
 func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
+	ctx, span := s.tracer.Start(c.Request.Context(), "handler.UpdateSettings")
+	defer span.End()
+
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		span.RecordError(err)
 		s.logger.Error("Error in UpdateSettings:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
@@ -83,18 +92,20 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 
 	// получаем настройки с фронта
 	if err := c.ShouldBindJSON(&updatedSettings); err != nil {
+		span.RecordError(err)
 		s.logger.Error("Error in UpdateSettings ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
 	// создаем контекст с таймаутом
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// изменяем настройки
 	err = s.settingsService.UpdateSettings(ctx, userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
 	if err != nil {
+		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			s.logger.Error("Error in UpdateSettings:", "error", err)
 			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "request timeout"})
@@ -108,6 +119,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// получаем измененные настройки
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		s.logger.Error("Error in UpdateSettings:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return

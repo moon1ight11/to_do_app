@@ -10,6 +10,9 @@ import (
 
 // изменение названия задачи
 func (db *Repo) UpdateTitle(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, title string, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.UpdateTitle")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.tasks
 				SET title = $2, updated_at = NOW()
@@ -17,6 +20,7 @@ func (db *Repo) UpdateTitle(ctx context.Context, taskId uuid.UUID, ownerId uuid.
 			`
 	_, err := tx.ExecContext(ctx, query, taskId, title, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateTitle query: %w", err)
 	}
 
@@ -25,6 +29,9 @@ func (db *Repo) UpdateTitle(ctx context.Context, taskId uuid.UUID, ownerId uuid.
 
 // изменение описания задачи
 func (db *Repo) UpdateDescription(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, description string, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.UpdateDescription")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.tasks
 				SET description = $2, updated_at = NOW()
@@ -32,6 +39,7 @@ func (db *Repo) UpdateDescription(ctx context.Context, taskId uuid.UUID, ownerId
 			`
 	_, err := tx.ExecContext(ctx, query, taskId, description, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateDescription query: %w", err)
 	}
 
@@ -40,6 +48,9 @@ func (db *Repo) UpdateDescription(ctx context.Context, taskId uuid.UUID, ownerId
 
 // изменение времени начала задачи
 func (db *Repo) UpdateStartAt(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, start time.Time, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.UpdateStartAt")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.tasks
 				SET start_at = $2, updated_at = NOW()
@@ -47,6 +58,7 @@ func (db *Repo) UpdateStartAt(ctx context.Context, taskId uuid.UUID, ownerId uui
 			`
 	_, err := tx.ExecContext(ctx, query, taskId, start, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateStartAt query: %w", err)
 	}
 
@@ -55,6 +67,9 @@ func (db *Repo) UpdateStartAt(ctx context.Context, taskId uuid.UUID, ownerId uui
 
 // изменение времени окончания задачи
 func (db *Repo) UpdateEndAt(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, end time.Time, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.UpdateEndAt")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.tasks
 				SET end_at = $2, updated_at = NOW()
@@ -62,6 +77,7 @@ func (db *Repo) UpdateEndAt(ctx context.Context, taskId uuid.UUID, ownerId uuid.
 			`
 	_, err := tx.ExecContext(ctx, query, taskId, end, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateEndAt query: %w", err)
 	}
 
@@ -70,6 +86,9 @@ func (db *Repo) UpdateEndAt(ctx context.Context, taskId uuid.UUID, ownerId uuid.
 
 // изменение статуса задачи (+ выполнено)
 func (db *Repo) TaskCompleted(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.TaskCompleted")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.tasks
 				SET completed_at = NOW(), updated_at = NOW()
@@ -77,6 +96,7 @@ func (db *Repo) TaskCompleted(ctx context.Context, taskId uuid.UUID, ownerId uui
 			`
 	_, err := tx.ExecContext(ctx, query, taskId, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in TaskCompleted query: %w", err)
 	}
 
@@ -85,6 +105,9 @@ func (db *Repo) TaskCompleted(ctx context.Context, taskId uuid.UUID, ownerId uui
 
 // изменение статуса задачи (- невыполнено)
 func (db *Repo) TaskUncompleted(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.TaskUncompleted")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.tasks
 				SET completed_at = null, updated_at = NOW()
@@ -92,6 +115,7 @@ func (db *Repo) TaskUncompleted(ctx context.Context, taskId uuid.UUID, ownerId u
 			`
 	_, err := tx.ExecContext(ctx, query, taskId, ownerId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in TaskUncompleted query: %w", err)
 	}
 

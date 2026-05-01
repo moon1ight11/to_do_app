@@ -10,9 +10,13 @@ import (
 
 // получение настроек
 func (s *SettingsService) GetSettings(ctx context.Context, userId uuid.UUID) (models.Setting, error) {
+	ctx, span := s.tracer.Start(ctx, "service.GetSettings")
+	defer span.End()
+
 	// получаем настройки из репозитория
 	settings, err := s.settingsRepo.SettingsById(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		return models.Setting{}, fmt.Errorf("error in GetSettings: %w", err)
 	}
 
@@ -26,17 +30,22 @@ func (s *SettingsService) GetSettings(ctx context.Context, userId uuid.UUID) (mo
 
 // изменение настроек
 func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, duration *float64, tz *string) error {
+	ctx, span := s.tracer.Start(ctx, "service.UpdateSettings")
+	defer span.End()
+
 	// если обновляется временная зона
 	if tz != nil {
 		// проверяем, похожа ли входящая строа на временную зону
 		pattern := `^UTC([+-](?:1[0-4]|[0-9])(?::?[0-5][0-9])?)?$`
 		matched, err := regexp.MatchString(pattern, *tz)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateSettings: %w", err)
 		}
 
 		// если нет - прокидываем
 		if !matched {
+			span.RecordError(fmt.Errorf("error in UpdateSettings: timezone not looks like timezone"))
 			return fmt.Errorf("error in UpdateSettings: timezone not looks like timezone")
 		}
 	}
@@ -44,6 +53,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	// открываем транзакцию
 	transaction, err := s.settingsRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateSettings BeginTx: %w", err)
 	}
 
@@ -54,6 +64,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	if duration != nil {
 		err := s.settingsRepo.UpdateDuration(ctx, *duration, userId, transaction)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateSettings: %w", err)
 		}
 	}
@@ -62,6 +73,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	if tz != nil {
 		err := s.settingsRepo.UpdateTZ(ctx, *tz, userId, transaction)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateSettings: %w", err)
 		}
 	}
@@ -69,6 +81,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	// если все ок - подтверждаем транзакцию
 	err = transaction.Commit()
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateSettings commit: %w", err)
 	}
 

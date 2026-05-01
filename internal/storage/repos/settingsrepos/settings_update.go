@@ -9,6 +9,9 @@ import (
 
 // изменение временной зоны по id
 func (db *Repo) UpdateTZ(ctx context.Context, tz string, userId uuid.UUID, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.UpdateTZ")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.settings
 				SET default_tz = $1
@@ -17,6 +20,7 @@ func (db *Repo) UpdateTZ(ctx context.Context, tz string, userId uuid.UUID, tx *s
 
 	_, err := tx.ExecContext(ctx, query, tz, userId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateTZ query: %w", err)
 	}
 
@@ -25,6 +29,9 @@ func (db *Repo) UpdateTZ(ctx context.Context, tz string, userId uuid.UUID, tx *s
 
 // изменение продолжительности по id
 func (db *Repo) UpdateDuration(ctx context.Context, duration float64, userId uuid.UUID, tx *sql.Tx) error {
+	ctx, span := db.tracer.Start(ctx, "repo.UpdateDuration")
+	defer span.End()
+
 	query := `
 				UPDATE todo_app.settings
 				SET default_duration = $1
@@ -32,6 +39,7 @@ func (db *Repo) UpdateDuration(ctx context.Context, duration float64, userId uui
 			`
 	_, err := tx.ExecContext(ctx, query, duration, userId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateDuration query: %w", err)
 	}
 

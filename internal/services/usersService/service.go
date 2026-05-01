@@ -12,24 +12,31 @@ import (
 
 // добавление пользователя в БД
 func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.UUID, error) {
+	ctx, span := u.tracer.Start(ctx, "service.AddUser")
+	defer span.End()
+
 	// проверка на уникальность имени и почты
 	exist, err := u.CheckNameAndEmail(ctx, user.Name, user.Email)
 	if err != nil {
+		span.RecordError(err)
 		return uuid.Nil, fmt.Errorf("error in AddUser: %w", err)
 	}
 	if exist {
+		span.RecordError(fmt.Errorf("error in AddUser: name or email already exists"))
 		return uuid.Nil, fmt.Errorf("error in AddUser: name or email already exists")
 	}
 
 	// хэширование пароля
 	hashPass, err := bcrypt.GenerateFromPassword([]byte(user.Pass), bcrypt.DefaultCost)
 	if err != nil {
+		span.RecordError(err)
 		return uuid.Nil, fmt.Errorf("error in AddUser hash password: %w", err)
 	}
 
 	// добавление в базу данных
 	userId, err := u.userRepo.CreateUser(ctx, user.Name, string(hashPass), user.Email)
 	if err != nil {
+		span.RecordError(err)
 		return uuid.Nil, fmt.Errorf("error in AddUser: %w", err)
 	}
 
@@ -38,15 +45,20 @@ func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.U
 
 // проверка и получение пользователя
 func (u *UserService) CheckAndGetUser(ctx context.Context, user models.UserAuth) (models.UserRequest, error) {
+	ctx, span := u.tracer.Start(ctx, "service.CheckAndGetUser")
+	defer span.End()
+
 	// находим пользователя по почте
 	foundUser, err := u.userRepo.UserByEmail(ctx, user.Email)
 	if err != nil {
+		span.RecordError(err)
 		return models.UserRequest{}, fmt.Errorf("error in CheckAndGetUser: %w", err)
 	}
 
 	// сравниваем пароли
 	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Pass), []byte(user.Pass))
 	if err != nil {
+		span.RecordError(err)
 		return models.UserRequest{}, fmt.Errorf("error in CheckAndGetUser: passwords not match")
 	}
 
@@ -62,18 +74,24 @@ func (u *UserService) CheckAndGetUser(ctx context.Context, user models.UserAuth)
 
 // проверка свободности имени и почты
 func (u *UserService) CheckNameAndEmail(ctx context.Context, userName string, userEmail string) (bool, error) {
+	ctx, span := u.tracer.Start(ctx, "service.CheckNameAndEmail")
+	defer span.End()
+
 	// проверяем имя
 	exist, err := u.userRepo.CheckUserName(ctx, userName)
 	if err != nil {
+		span.RecordError(err)
 		return true, fmt.Errorf("error in CheckNameAndEmail: %w", err)
 	}
 	if exist {
+		span.RecordError(fmt.Errorf("name already exist"))
 		return true, nil
 	}
 
 	// проверяем почту
 	exist, err = u.userRepo.CheckUserEmail(ctx, userEmail)
 	if err != nil {
+		span.RecordError(err)
 		return true, fmt.Errorf("error in CheckNameAndEmail: %w", err)
 	}
 
@@ -82,9 +100,13 @@ func (u *UserService) CheckNameAndEmail(ctx context.Context, userName string, us
 
 // получение данных пользователя
 func (u *UserService) GetUser(ctx context.Context, userId uuid.UUID) (models.UserRequest, error) {
+	ctx, span := u.tracer.Start(ctx, "service.GetUser")
+	defer span.End()
+
 	// запрашиваем пользователя в репозитории
 	user, err := u.userRepo.UserById(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		return models.UserRequest{}, fmt.Errorf("error in GetUser: %w", err)
 	}
 
@@ -99,9 +121,13 @@ func (u *UserService) GetUser(ctx context.Context, userId uuid.UUID) (models.Use
 
 // обновление полей пользователя
 func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string, email *string, userId uuid.UUID) error {
+	ctx, span := u.tracer.Start(ctx, "service.UpdateUser")
+	defer span.End()
+
 	// если обновляется имя - чтобы было не пустое
 	if name != nil {
 		if strings.TrimSpace(*name) == "" {
+			span.RecordError(fmt.Errorf("error in UpdateUser: new name is empty"))
 			return fmt.Errorf("error in UpdateUser: new name is empty")
 		}
 	}
@@ -109,6 +135,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 	// если обновляется пароль - чтобы не был пустым
 	if pass != nil {
 		if strings.TrimSpace(*pass) == "" {
+			span.RecordError(fmt.Errorf("error in UpdateUser: new pass is empty"))
 			return fmt.Errorf("error in UpdateUser: new pass is empty")
 		}
 	}
@@ -119,11 +146,13 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		pattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
 		matched, err := regexp.MatchString(pattern, *email)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in check email in UpdateUser: %w", err)
 		}
 
 		// если нет - отклоняем
 		if !matched {
+			span.RecordError(fmt.Errorf("error in UpdateUser: new email not looks like email"))
 			return fmt.Errorf("error in UpdateUser: new email not looks like email")
 		}
 	}
@@ -131,6 +160,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 	// открываем транзакцию
 	transaction, err := u.userRepo.DB.BeginTx(ctx, nil)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateUser BeginTx: %w", err)
 	}
 
@@ -142,15 +172,18 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// проверяем, не занято ли новое имя
 		NameExist, err := u.userRepo.CheckUserName(ctx, *name)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 		if NameExist {
+			span.RecordError(fmt.Errorf("error in UpdateUser: new name already exist"))
 			return fmt.Errorf("error in UpdateUser: new name already exist")
 		}
 
 		// если ок - меняем
 		err = u.userRepo.UpdateName(ctx, *name, userId, transaction)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 	}
@@ -160,12 +193,14 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// хэширование пароля
 		hashPass, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in hash password in UpdateUser: %w", err)
 		}
 
 		// изменяем пароль
 		err = u.userRepo.UpdatePass(ctx, string(hashPass), userId, transaction)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 	}
@@ -175,15 +210,18 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// проверяем, не занята ли новая почта
 		EmailExist, err := u.userRepo.CheckUserEmail(ctx, *email)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 		if EmailExist {
+			span.RecordError(fmt.Errorf("error in UpdateUser: new email already exist"))
 			return fmt.Errorf("error in UpdateUser: new email already exist")
 		}
 
 		// если ок - меняем
 		err = u.userRepo.UpdateEmail(ctx, *email, userId, transaction)
 		if err != nil {
+			span.RecordError(err)
 			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 	}
@@ -191,6 +229,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 	// если все ок - подтверждаем транзакцию
 	err = transaction.Commit()
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in UpdateUser commit: %w", err)
 	}
 
@@ -199,8 +238,12 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 
 // удаление пользователя
 func (u *UserService) DeleteUser(ctx context.Context, userId uuid.UUID) error {
+	ctx, span := u.tracer.Start(ctx, "service.DeleteUser")
+	defer span.End()
+
 	err := u.userRepo.DeleteUser(ctx, userId)
 	if err != nil {
+		span.RecordError(err)
 		return fmt.Errorf("error in DeleteUser: %w", err)
 	}
 

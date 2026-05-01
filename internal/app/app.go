@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"todoapp/internal/api"
 	"todoapp/internal/api/handlers/authhandlers"
 	"todoapp/internal/api/handlers/settingshandlers"
@@ -16,72 +17,83 @@ import (
 	"todoapp/internal/storage/repos/settingsrepos"
 	"todoapp/internal/storage/repos/tasksrepos"
 	"todoapp/internal/storage/repos/usersrepos"
+	"todoapp/internal/telemetry"
 	"todoapp/pkg/logger"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Dependencies struct {
-	Router *api.Router
-	DB     *storage.DataBase
-	Redis  *storage.RedisClient
-	Logger logger.LoggerInterface
+	Router    *api.Router
+	DB        *storage.DataBase
+	Redis     *storage.RedisClient
+	Logger    logger.LoggerInterface
+	Telemetry trace.Tracer
 }
 
 func InitDependencies(cfg *config.Config) *Dependencies {
 	// создаем логгер
-	log, err := logger.New(cfg)
+	logger, err := logger.New(cfg)
 	if err != nil {
-		log.Fatal("Failed to init logger:", "error", err)
+		log.Fatalf("Failed to init logger: %v", err)
+	}
+
+	// инициализируем трейсер
+	tracer, err := telemetry.Init(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize telemetry: %v", err)
 	}
 
 	// соединяемся с БД
 	db, err := storage.NewStorage(cfg)
 	if err != nil {
-		log.Fatal("Failed to connect to db:", "error", err)
+		log.Fatalf("Failed to connect to db: %v", err)
 	}
 
 	// применяем миграции
 	if err := db.UpMigrations(); err != nil {
-		log.Fatal("Failed to upping migrations:", "error", err)
+		log.Fatalf("Failed to upping migrations: %v", err)
 	}
 
 	// подключаемся к редис
 	redisClient, err := storage.NewRedisClient(cfg)
 	if err != nil {
-		log.Error("Failed to connect to Redis:", "error", err)
+		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 
 	// инициализируем кэш
 	var cacheService *cache.CacheService
 	if redisClient != nil {
-		cacheService = cache.NewCacheService(redisClient.Client)
+		cacheService = cache.NewCacheService(redisClient.Client, tracer)
 	}
 
 	// инициализируем jwt
 	jwtService := jwt.NewJWTService(cfg.JWT.Secret, cfg.JWT.Expiration)
 
 	// инициализируем зависимости
-	userRepo := usersrepos.NewUserRepo(db)
-	userService := usersservice.NewUserService(userRepo)
-	userHandler := usershandlers.NewUserHandler(userService, log, cacheService)
-	authHandler := authhandlers.NewAuthHandler(userService, jwtService, log)
+	userRepo := usersrepos.NewUserRepo(db, tracer)
+	userService := usersservice.NewUserService(userRepo, tracer)
+	userHandler := usershandlers.NewUserHandler(userService, logger, cacheService, tracer)
+	authHandler := authhandlers.NewAuthHandler(userService, jwtService, logger, tracer)
 
-	settingsRepo := settingsrepos.NewSettingsRepo(db)
-	settingsService := settingsservice.NewSettingsService(settingsRepo)
-	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, log, cacheService)
+	settingsRepo := settingsrepos.NewSettingsRepo(db, tracer)
+	settingsService := settingsservice.NewSettingsService(settingsRepo, tracer)
+	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, logger, cacheService, tracer)
 
-	tasksRepo := tasksrepos.NewTasksRepo(db)
-	tasksService := tasksservice.NewTasksService(tasksRepo)
-	tasksHandler := taskshandlers.NewTasksHandler(tasksService, log, cacheService)
+	tasksRepo := tasksrepos.NewTasksRepo(db, tracer)
+	tasksService := tasksservice.NewTasksService(tasksRepo, tracer)
+	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger, cacheService, tracer)
 
 	// инициализируем роутер
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)
-	router.Init(jwtService, log)
+	router.Init(jwtService, logger, cfg)
 
 	return &Dependencies{
-		Router: router,
-		DB:     db,
-		Redis:  redisClient,
-		Logger: log,
+		Router:    router,
+		DB:        db,
+		Redis:     redisClient,
+		Logger:    logger,
+		Telemetry: tracer,
 	}
 }
 

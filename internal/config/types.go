@@ -3,12 +3,14 @@ package config
 import "time"
 
 type Config struct {
-	Environment string         `mapstructure:"environment"`
-	Server      ServerConfig   `mapstructure:"server"`
-	Database    DatabaseConfig `mapstructure:"database"`
-	JWT         JWTConfig      `mapstructure:"jwt"`
-	Redis       RedisConfig    `mapstructure:"redis"`
-	Logger      LoggerConfig   `mapstructure:"logger"`
+	Environment string          `mapstructure:"environment"`
+	ServiceName string          `mapstructure:"service_name"`
+	Server      ServerConfig    `mapstructure:"server"`
+	Database    DatabaseConfig  `mapstructure:"database"`
+	JWT         JWTConfig       `mapstructure:"jwt"`
+	Redis       RedisConfig     `mapstructure:"redis"`
+	Logger      LoggerConfig    `mapstructure:"logger"`
+	Telemetry   TelemetryConfig `mapstructure:"telemetry"`
 }
 
 type RedisConfig struct {
@@ -39,4 +41,9 @@ type JWTConfig struct {
 
 type LoggerConfig struct {
 	FilePath string `mapstructure:"file_path"`
+}
+
+type TelemetryConfig struct {
+	Endpoint    string `mapstructure:"endpoint"`
+	ServiceName string `mapstructure:"service_name"`
 }
