@@ -23,7 +23,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		t.logger.Error("Error in CreateTask:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -32,7 +32,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// получаем задачу с фронта
 	if err := c.ShouldBindJSON(&task); err != nil {
 		t.logger.Error("Error in CreateTask ShouldBindJSON:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -48,7 +48,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 			return
 		}
 		t.logger.Error("Error in CreateTask:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -75,7 +75,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		t.logger.Error("Error in GetTasks:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -87,8 +87,12 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 		err := t.cacheService.Get(ctx, cacheKey, &cachedTasks)
 		if err == nil {
 			c.JSON(http.StatusOK, gin.H{"tasks": cachedTasks})
+			t.logger.Info("Tasks retrieved from cache", "user", userId)
 			return
 		}
+
+		// если нет - идем в БД
+		t.logger.Info("Cache miss for tasks", "key", cacheKey, "error", err)
 	}
 
 	// получаем задачи
@@ -100,7 +104,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 			return
 		}
 		t.logger.Error("Error in GetTasks:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -111,7 +115,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 		}
 	}
 
-	t.logger.Info("Tasks getted successfully", "user", userId)
+	t.logger.Info("Tasks retrieved successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"tasks": tasks})
 }
@@ -126,7 +130,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		t.logger.Error("Error in GetTaskById:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -135,7 +139,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		t.logger.Error("Error in parse uuid in GetTaskById:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -166,7 +170,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 			return
 		}
 		t.logger.Error("Error in GetTaskById:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -177,7 +181,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 		}
 	}
 
-	t.logger.Info("One task getted successfully", "user", userId)
+	t.logger.Info("One task retrieved successfully", "user", userId)
 
 	c.JSON(http.StatusOK, gin.H{"task": task})
 }
@@ -192,7 +196,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		t.logger.Error("Error in UpdateTask:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -200,7 +204,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// получаем измененную задачу с фронта
 	if err := c.ShouldBindJSON(&updatedTask); err != nil {
 		t.logger.Error("Error in UpdateTask ShouldBindJSON:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -209,7 +213,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		t.logger.Error("Error in parse uuid in UpdateTask:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -234,14 +238,14 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 			return
 		}
 		t.logger.Error("Error in UpdateTask:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
 		t.logger.Error("Error in UpdateTask:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -274,7 +278,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		t.logger.Error("Error in DeleteTask:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -283,7 +287,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
 		t.logger.Error("Error in parse uuid in DeleteTask:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -296,7 +300,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 			return
 		}
 		t.logger.Error("Error in DeleteTask:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 

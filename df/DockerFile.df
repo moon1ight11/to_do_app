@@ -7,4 +7,3 @@ COPY . .
 RUN go build -o todoapp_api ./cmd/main.go
 
 CMD [ "./todoapp_api" ]
-

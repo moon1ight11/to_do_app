@@ -3,9 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
-	"todoapp/internal/config"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"todoapp/internal/config"
 )
 
 // соединение с редис
@@ -26,5 +26,5 @@ func NewRedisClient(cfg *config.Config) (*RedisClient, error) {
 
 // метод для закрытия соединения с редис
 func (r *RedisClient) Close() error {
-    return r.Client.Close()
+	return r.Client.Close()
 }

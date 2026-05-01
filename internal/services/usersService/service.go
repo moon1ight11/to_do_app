@@ -15,7 +15,7 @@ func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.U
 	// проверка на уникальность имени и почты
 	exist, err := u.CheckNameAndEmail(ctx, user.Name, user.Email)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("error in AddUser: %w", err)
 	}
 	if exist {
 		return uuid.Nil, fmt.Errorf("error in AddUser: name or email already exists")
@@ -30,7 +30,7 @@ func (u *UserService) AddUser(ctx context.Context, user models.UserAuth) (uuid.U
 	// добавление в базу данных
 	userId, err := u.userRepo.CreateUser(ctx, user.Name, string(hashPass), user.Email)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("error in AddUser: %w", err)
 	}
 
 	return userId, nil
@@ -41,7 +41,7 @@ func (u *UserService) CheckAndGetUser(ctx context.Context, user models.UserAuth)
 	// находим пользователя по почте
 	foundUser, err := u.userRepo.UserByEmail(ctx, user.Email)
 	if err != nil {
-		return models.UserRequest{}, err
+		return models.UserRequest{}, fmt.Errorf("error in CheckAndGetUser: %w", err)
 	}
 
 	// сравниваем пароли
@@ -65,7 +65,7 @@ func (u *UserService) CheckNameAndEmail(ctx context.Context, userName string, us
 	// проверяем имя
 	exist, err := u.userRepo.CheckUserName(ctx, userName)
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("error in CheckNameAndEmail: %w", err)
 	}
 	if exist {
 		return true, nil
@@ -74,7 +74,7 @@ func (u *UserService) CheckNameAndEmail(ctx context.Context, userName string, us
 	// проверяем почту
 	exist, err = u.userRepo.CheckUserEmail(ctx, userEmail)
 	if err != nil {
-		return true, err
+		return true, fmt.Errorf("error in CheckNameAndEmail: %w", err)
 	}
 
 	return exist, nil
@@ -85,7 +85,7 @@ func (u *UserService) GetUser(ctx context.Context, userId uuid.UUID) (models.Use
 	// запрашиваем пользователя в репозитории
 	user, err := u.userRepo.UserById(ctx, userId)
 	if err != nil {
-		return models.UserRequest{}, err
+		return models.UserRequest{}, fmt.Errorf("error in GetUser: %w", err)
 	}
 
 	// приводим тип
@@ -142,7 +142,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// проверяем, не занято ли новое имя
 		NameExist, err := u.userRepo.CheckUserName(ctx, *name)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 		if NameExist {
 			return fmt.Errorf("error in UpdateUser: new name already exist")
@@ -151,7 +151,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// если ок - меняем
 		err = u.userRepo.UpdateName(ctx, *name, userId, transaction)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 	}
 
@@ -166,7 +166,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// изменяем пароль
 		err = u.userRepo.UpdatePass(ctx, string(hashPass), userId, transaction)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 	}
 
@@ -175,7 +175,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// проверяем, не занята ли новая почта
 		EmailExist, err := u.userRepo.CheckUserEmail(ctx, *email)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 		if EmailExist {
 			return fmt.Errorf("error in UpdateUser: new email already exist")
@@ -184,7 +184,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 		// если ок - меняем
 		err = u.userRepo.UpdateEmail(ctx, *email, userId, transaction)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateUser: %w", err)
 		}
 	}
 
@@ -201,7 +201,7 @@ func (u *UserService) UpdateUser(ctx context.Context, name *string, pass *string
 func (u *UserService) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	err := u.userRepo.DeleteUser(ctx, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in DeleteUser: %w", err)
 	}
 
 	return nil

@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"time"
 	"todoapp/internal/api/models"
-	"github.com/google/uuid"
 )
 
 type UsersServiceInterface interface {

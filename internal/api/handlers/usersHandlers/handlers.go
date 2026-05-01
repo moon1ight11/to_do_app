@@ -22,7 +22,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		u.logger.Error("Error in GetUser:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -53,7 +53,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 			return
 		}
 		u.logger.Error("Error in GetUser:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -75,7 +75,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		u.logger.Error("Error in UpdateUser:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -85,7 +85,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&updatedUser); err != nil {
 		u.logger.Error("Error in UpdateUser ShouldBindJSON:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -102,7 +102,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 			return
 		}
 		u.logger.Error("Error in UpdateUser:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -119,7 +119,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
 		u.logger.Error("Error in UpdateUser:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -141,7 +141,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		u.logger.Error("Error in DeleteUser:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 
@@ -158,7 +158,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 			return
 		}
 		u.logger.Error("Error in DeleteUser:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 

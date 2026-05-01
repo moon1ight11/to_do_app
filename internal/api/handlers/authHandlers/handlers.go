@@ -16,7 +16,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	var user models.UserAuth
 	if err := c.ShouldBindJSON(&user); err != nil {
 		u.logger.Error("Error in SignUp ShouldBindJSON:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -40,7 +40,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 			return
 		}
 		u.logger.Error("Error in SignUp:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -48,7 +48,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	token, err := u.jwtService.GenerateToken(userId, user.Name, user.Email)
 	if err != nil {
 		u.logger.Error("Error in SignUp:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -66,7 +66,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	var user models.UserAuth
 	if err := c.ShouldBindJSON(&user); err != nil {
 		u.logger.Error("Error in SignIn ShouldBindJSON:", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 
@@ -90,7 +90,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 			return
 		}
 		u.logger.Error("Error in SignIn:", "error", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -98,7 +98,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	token, err := u.jwtService.GenerateToken(foundUser.Id, foundUser.Name, foundUser.Email)
 	if err != nil {
 		u.logger.Error("Error in SignIn:", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -115,7 +115,7 @@ func (u *AuthHandler) SignOut(c *gin.Context) {
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
 		u.logger.Error("Error in SignOut:", "error", err)
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 

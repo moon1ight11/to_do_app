@@ -13,7 +13,7 @@ func (s *SettingsService) GetSettings(ctx context.Context, userId uuid.UUID) (mo
 	// получаем настройки из репозитория
 	settings, err := s.settingsRepo.SettingsById(ctx, userId)
 	if err != nil {
-		return models.Setting{}, err
+		return models.Setting{}, fmt.Errorf("error in GetSettings: %w", err)
 	}
 
 	// приводим тип
@@ -54,7 +54,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	if duration != nil {
 		err := s.settingsRepo.UpdateDuration(ctx, *duration, userId, transaction)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateSettings: %w", err)
 		}
 	}
 
@@ -62,7 +62,7 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, 
 	if tz != nil {
 		err := s.settingsRepo.UpdateTZ(ctx, *tz, userId, transaction)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in UpdateSettings: %w", err)
 		}
 	}
 

@@ -9,5 +9,5 @@ type Repo struct {
 }
 
 func NewUserRepo(db *storage.DataBase) *Repo {
-    return &Repo{DataBase: *db}
+	return &Repo{DataBase: *db}
 }

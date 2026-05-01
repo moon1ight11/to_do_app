@@ -9,7 +9,7 @@ servers:
     description: ToDoApp server
 
 paths:
-  /v1/auth/sign-up: 
+  /v1/auth/sign-up:
     post:
       summary: Метод для регистрации
       tags:
@@ -88,9 +88,9 @@ paths:
     get:
       summary: Метод для получения информации о пользователе
       tags:
-       - Users
+        - Users
       security:
-       - cookieAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Успешный ответ с информацией о пользователе

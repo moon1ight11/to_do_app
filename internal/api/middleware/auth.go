@@ -15,7 +15,7 @@ func Auth(jwtService jwt.TokenService, logger logger.LoggerInterface) gin.Handle
 		value, err := c.Cookie("cookie")
 		if err != nil {
 			logger.Error("Error in get value from cookie in AuthMiddle:", "error", err)
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			c.Abort()
 			return
 		}
@@ -25,7 +25,7 @@ func Auth(jwtService jwt.TokenService, logger logger.LoggerInterface) gin.Handle
 		token, err := jwtService.ParseToken(value, &claims)
 		if err != nil {
 			logger.Error("Error in parse token in AuthMiddle:", "error", err)
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			c.Abort()
 			return
 		}
