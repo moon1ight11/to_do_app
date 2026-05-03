@@ -8,6 +8,7 @@ import (
 	"time"
 	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
+	"todoapp/internal/metrics"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +21,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	// получаем пользователя с фронта
 	var user models.UserAuth
 	if err := c.ShouldBindJSON(&user); err != nil {
+		u.metrics.RecordError(string(metrics.ErrBadRequest), "SignUp")
 		span.RecordError(err)
 		u.logger.Error("Error in SignUp ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -28,6 +30,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 
 	// проверяем что введенные данные не пустые
 	if user.Name == "" || user.Pass == "" || user.Email == "" {
+		u.metrics.RecordError(string(metrics.ErrBadRequest), "SignUp")
 		span.RecordError(fmt.Errorf("name, email and password are required"))
 		u.logger.Error("Error in SignUp input: name, email or password is empty")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name, email and password are required"})
@@ -41,6 +44,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	// добавляем пользователя в БД
 	userId, err := u.userService.AddUser(ctx, user)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "SignUp")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in SignUp:", "error", err)
@@ -55,6 +59,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	// генерируем токен для нового пользователя
 	token, err := u.jwtService.GenerateToken(userId, user.Name, user.Email)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "SignUp")
 		span.RecordError(err)
 		u.logger.Error("Error in SignUp:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -77,6 +82,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	// получаем пользователя с  фронта
 	var user models.UserAuth
 	if err := c.ShouldBindJSON(&user); err != nil {
+		u.metrics.RecordError(string(metrics.ErrBadRequest), "SignIn")
 		span.RecordError(err)
 		u.logger.Error("Error in SignIn ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -85,6 +91,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 
 	// проверяем что введенные данные не пустые
 	if user.Pass == "" || user.Email == "" {
+		u.metrics.RecordError(string(metrics.ErrBadRequest), "SignIn")
 		span.RecordError(fmt.Errorf("email and password are required"))
 		u.logger.Error("Error in SignIn input: email or password is empty")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
@@ -98,6 +105,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	// поиск и проверка пользователя
 	foundUser, err := u.userService.CheckAndGetUser(ctx, user)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrForbidden), "SignIn")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in SignIn:", "error", err)
@@ -112,6 +120,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	// генерируем токен для найденного пользователя
 	token, err := u.jwtService.GenerateToken(foundUser.Id, foundUser.Name, foundUser.Email)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "SignIn")
 		span.RecordError(err)
 		u.logger.Error("Error in SignIn:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -133,6 +142,7 @@ func (u *AuthHandler) SignOut(c *gin.Context) {
 
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrForbidden), "SignOut")
 		span.RecordError(err)
 		u.logger.Error("Error in SignOut:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})

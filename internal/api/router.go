@@ -5,6 +5,7 @@ import (
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
 	"todoapp/internal/config"
+	"todoapp/internal/metrics"
 	"todoapp/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -33,9 +34,17 @@ func NewRouter(
 	}
 }
 
-func (r *Router) Init(jwtService jwt.TokenService, logger logger.LoggerInterface, cfg *config.Config) {
+func (r *Router) Init(
+	jwtService jwt.TokenService,
+	logger logger.LoggerInterface,
+	cfg *config.Config,
+	metrics *metrics.Metrics,
+) {
 	r.ginEngine.Use(middleware.Tracing(cfg.ServiceName))
+	r.ginEngine.Use(metrics.GinMiddleware())
 	r.ginEngine.Use(middleware.CORS())
+
+	metrics.RegisterMetricsHandler(r.ginEngine, "/metrics")
 
 	// группировка роутов
 	privateGroup := r.ginEngine.Group("/v1/private")

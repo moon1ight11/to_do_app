@@ -8,6 +8,7 @@ import (
 	"time"
 	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
+	"todoapp/internal/metrics"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +25,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrForbidden), "GetUser")
 		span.RecordError(err)
 		u.logger.Error("Error in GetUser:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -51,6 +53,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 	// получаем пользователя
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "GetUser")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in GetUser:", "error", err)
@@ -82,6 +85,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrForbidden), "UpdateUser")
 		span.RecordError(err)
 		u.logger.Error("Error in UpdateUser:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -93,6 +97,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 
 	// получаем обновленного пользователя с фронта
 	if err := c.ShouldBindJSON(&updatedUser); err != nil {
+		u.metrics.RecordError(string(metrics.ErrBadRequest), "UpdateUser")
 		span.RecordError(err)
 		u.logger.Error("Error in UpdateUser ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -106,6 +111,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// обновляем нужные поля
 	err = u.userService.UpdateUser(ctx, updatedUser.Name, updatedUser.Pass, updatedUser.Email, updatedUser.Id)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "UpdateUser")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in UpdateUser:", "error", err)
@@ -129,6 +135,7 @@ func (u *UserHandler) UpdateUser(c *gin.Context) {
 	// получаем обновленного пользователя
 	user, err := u.userService.GetUser(ctx, userId)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "UpdateUser")
 		span.RecordError(err)
 		u.logger.Error("Error in UpdateUser:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -155,6 +162,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrForbidden), "DeleteUser")
 		span.RecordError(err)
 		u.logger.Error("Error in DeleteUser:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -168,6 +176,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	// удаляем пользователя
 	err = u.userService.DeleteUser(ctx, userId)
 	if err != nil {
+		u.metrics.RecordError(string(metrics.ErrInternal), "DeleteUser")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			u.logger.Error("Error in DeleteUser:", "error", err)

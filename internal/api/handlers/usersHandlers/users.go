@@ -1,6 +1,7 @@
 package usershandlers
 
 import (
+	"todoapp/internal/metrics"
 	"todoapp/internal/services"
 	"todoapp/internal/storage/cache"
 	"todoapp/pkg/logger"
@@ -13,6 +14,7 @@ type UserHandler struct {
 	logger       logger.LoggerInterface
 	cacheService cache.CacheInterface
 	tracer       trace.Tracer
+	metrics      *metrics.Metrics
 }
 
 func NewUserHandler(
@@ -20,11 +22,13 @@ func NewUserHandler(
 	logger logger.LoggerInterface,
 	cacheService cache.CacheInterface,
 	tracer trace.Tracer,
+	metrics *metrics.Metrics,
 ) *UserHandler {
 	return &UserHandler{
 		userService:  userService,
 		logger:       logger,
 		cacheService: cacheService,
 		tracer:       tracer,
+		metrics:      metrics,
 	}
 }

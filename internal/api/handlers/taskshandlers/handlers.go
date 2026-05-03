@@ -8,6 +8,7 @@ import (
 	"time"
 	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
+	"todoapp/internal/metrics"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -25,6 +26,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrForbidden), "CreateTask")
 		span.RecordError(err)
 		t.logger.Error("Error in CreateTask:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -35,6 +37,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 
 	// получаем задачу с фронта
 	if err := c.ShouldBindJSON(&task); err != nil {
+		t.metrics.RecordError(string(metrics.ErrBadRequest), "CreateTask")
 		span.RecordError(err)
 		t.logger.Error("Error in CreateTask ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -47,6 +50,7 @@ func (t *TasksHandler) CreateTask(c *gin.Context) {
 	// добавляем задачу
 	err = t.taskService.CreateTask(ctx, task)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrInternal), "CreateTask")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in CreateTask:", "error", err)
@@ -83,6 +87,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrForbidden), "GetTasks")
 		span.RecordError(err)
 		t.logger.Error("Error in GetTasks:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -108,6 +113,7 @@ func (t *TasksHandler) GetTasks(c *gin.Context) {
 	// получаем задачи
 	tasks, err := t.taskService.GetAllTasks(ctx, userId)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrInternal), "GetTasks")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in GetTasks:", "error", err)
@@ -143,6 +149,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrForbidden), "GetTaskById")
 		span.RecordError(err)
 		t.logger.Error("Error in GetTaskById:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -153,6 +160,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrBadRequest), "GetTaskById")
 		span.RecordError(err)
 		t.logger.Error("Error in parse uuid in GetTaskById:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -180,6 +188,7 @@ func (t *TasksHandler) GetTaskById(c *gin.Context) {
 	// получаем задачу
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrInternal), "GetTaskById")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in GetTaskById:", "error", err)
@@ -215,6 +224,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrForbidden), "UpdateTask")
 		span.RecordError(err)
 		t.logger.Error("Error in UpdateTask:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -224,6 +234,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	var updatedTask models.Task
 	// получаем измененную задачу с фронта
 	if err := c.ShouldBindJSON(&updatedTask); err != nil {
+		t.metrics.RecordError(string(metrics.ErrBadRequest), "UpdateTask")
 		span.RecordError(err)
 		t.logger.Error("Error in UpdateTask ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -234,6 +245,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrBadRequest), "UpdateTask")
 		span.RecordError(err)
 		t.logger.Error("Error in parse uuid in UpdateTask:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -255,6 +267,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 		updatedTask.CompletedAt,
 	)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrInternal), "UpdateTask")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in UpdateTask:", "error", err)
@@ -268,6 +281,7 @@ func (t *TasksHandler) UpdateTask(c *gin.Context) {
 
 	task, err := t.taskService.GetOneTask(ctx, taskId, userId)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrInternal), "UpdateTask")
 		span.RecordError(err)
 		t.logger.Error("Error in UpdateTask:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -305,6 +319,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrForbidden), "DeleteTask")
 		span.RecordError(err)
 		t.logger.Error("Error in DeleteTask:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -315,6 +330,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	idStr := c.Param("task_id")
 	taskId, err := uuid.Parse(idStr)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrBadRequest), "DeleteTask")
 		span.RecordError(err)
 		t.logger.Error("Error in parse uuid in DeleteTask:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -324,6 +340,7 @@ func (t *TasksHandler) DeleteTask(c *gin.Context) {
 	// процесс удаления задачи и ее подзадач
 	err = t.taskService.DeleteTask(ctx, taskId, userId)
 	if err != nil {
+		t.metrics.RecordError(string(metrics.ErrInternal), "DeleteTask")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			t.logger.Error("Error in DeleteTask:", "error", err)

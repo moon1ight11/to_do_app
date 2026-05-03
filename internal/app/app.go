@@ -9,6 +9,7 @@ import (
 	"todoapp/internal/api/handlers/usershandlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/config"
+	"todoapp/internal/metrics"
 	"todoapp/internal/services/settingsservice"
 	"todoapp/internal/services/tasksservice"
 	"todoapp/internal/services/usersservice"
@@ -29,6 +30,7 @@ type Dependencies struct {
 	Redis     *storage.RedisClient
 	Logger    logger.LoggerInterface
 	Telemetry trace.Tracer
+	Metrics   *metrics.Metrics
 }
 
 func InitDependencies(cfg *config.Config) *Dependencies {
@@ -43,6 +45,8 @@ func InitDependencies(cfg *config.Config) *Dependencies {
 	if err != nil {
 		log.Fatalf("Failed to initialize telemetry: %v", err)
 	}
+
+	metrics := metrics.NewMetrics()
 
 	// соединяемся с БД
 	db, err := storage.NewStorage(cfg)
@@ -73,20 +77,20 @@ func InitDependencies(cfg *config.Config) *Dependencies {
 	// инициализируем зависимости
 	userRepo := usersrepos.NewUserRepo(db, tracer)
 	userService := usersservice.NewUserService(userRepo, tracer)
-	userHandler := usershandlers.NewUserHandler(userService, logger, cacheService, tracer)
-	authHandler := authhandlers.NewAuthHandler(userService, jwtService, logger, tracer)
+	userHandler := usershandlers.NewUserHandler(userService, logger, cacheService, tracer, metrics)
+	authHandler := authhandlers.NewAuthHandler(userService, jwtService, logger, tracer, metrics)
 
 	settingsRepo := settingsrepos.NewSettingsRepo(db, tracer)
 	settingsService := settingsservice.NewSettingsService(settingsRepo, tracer)
-	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, logger, cacheService, tracer)
+	settingsHandler := settingshandlers.NewSettingsHandler(settingsService, logger, cacheService, tracer, metrics)
 
 	tasksRepo := tasksrepos.NewTasksRepo(db, tracer)
 	tasksService := tasksservice.NewTasksService(tasksRepo, tracer)
-	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger, cacheService, tracer)
+	tasksHandler := taskshandlers.NewTasksHandler(tasksService, logger, cacheService, tracer, metrics)
 
 	// инициализируем роутер
 	router := api.NewRouter(userHandler, settingsHandler, tasksHandler, authHandler)
-	router.Init(jwtService, logger, cfg)
+	router.Init(jwtService, logger, cfg, metrics)
 
 	return &Dependencies{
 		Router:    router,
@@ -94,6 +98,7 @@ func InitDependencies(cfg *config.Config) *Dependencies {
 		Redis:     redisClient,
 		Logger:    logger,
 		Telemetry: tracer,
+		Metrics:   metrics,
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"time"
 	"todoapp/internal/api/helpers"
 	"todoapp/internal/api/models"
+	"todoapp/internal/metrics"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +25,7 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		s.metrics.RecordError(string(metrics.ErrForbidden), "GetSettings")
 		span.RecordError(err)
 		s.logger.Error("Error in GetSettings:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -51,6 +53,7 @@ func (s *SettingsHandler) GetSettings(c *gin.Context) {
 	// находим настройки по id
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
+		s.metrics.RecordError(string(metrics.ErrInternal), "GetSettings")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			s.logger.Error("Error in GetSettings:", "error", err)
@@ -82,6 +85,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// получаем id из контекста
 	userId, err := helpers.GetUserIdFromContext(c)
 	if err != nil {
+		s.metrics.RecordError(string(metrics.ErrForbidden), "UpdateSettings")
 		span.RecordError(err)
 		s.logger.Error("Error in UpdateSettings:", "error", err)
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
@@ -92,6 +96,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 
 	// получаем настройки с фронта
 	if err := c.ShouldBindJSON(&updatedSettings); err != nil {
+		s.metrics.RecordError(string(metrics.ErrBadRequest), "UpdateSettings")
 		span.RecordError(err)
 		s.logger.Error("Error in UpdateSettings ShouldBindJSON:", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -105,6 +110,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// изменяем настройки
 	err = s.settingsService.UpdateSettings(ctx, userId, updatedSettings.TimeDuration, updatedSettings.UserTz)
 	if err != nil {
+		s.metrics.RecordError(string(metrics.ErrInternal), "UpdateSettings")
 		span.RecordError(err)
 		if errors.Is(err, context.DeadlineExceeded) {
 			s.logger.Error("Error in UpdateSettings:", "error", err)
@@ -119,6 +125,7 @@ func (s *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// получаем измененные настройки
 	settings, err := s.settingsService.GetSettings(ctx, userId)
 	if err != nil {
+		s.metrics.RecordError(string(metrics.ErrInternal), "UpdateSettings")
 		span.RecordError(err)
 		s.logger.Error("Error in UpdateSettings:", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})

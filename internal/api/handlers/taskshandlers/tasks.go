@@ -1,6 +1,7 @@
 package taskshandlers
 
 import (
+	"todoapp/internal/metrics"
 	"todoapp/internal/services"
 	"todoapp/internal/storage/cache"
 	"todoapp/pkg/logger"
@@ -13,6 +14,7 @@ type TasksHandler struct {
 	logger       logger.LoggerInterface
 	cacheService cache.CacheInterface
 	tracer       trace.Tracer
+	metrics      *metrics.Metrics
 }
 
 func NewTasksHandler(
@@ -20,11 +22,13 @@ func NewTasksHandler(
 	logger logger.LoggerInterface,
 	cacheService cache.CacheInterface,
 	tracer trace.Tracer,
+	metrics *metrics.Metrics,
 ) *TasksHandler {
 	return &TasksHandler{
 		taskService:  taskService,
 		logger:       logger,
 		cacheService: cacheService,
 		tracer:       tracer,
+		metrics:      metrics,
 	}
 }
