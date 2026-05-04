@@ -11,10 +11,10 @@ type Config struct {
 	Redis       RedisConfig     `mapstructure:"redis"`
 	Logger      LoggerConfig    `mapstructure:"logger"`
 	Telemetry   TelemetryConfig `mapstructure:"telemetry"`
-} 
+}
 
 type ServerConfig struct {
-	Port string    `mapstructure:"port"`
+	Port string `mapstructure:"port"`
 	Host string `mapstructure:"host"`
 }
 
