@@ -198,7 +198,7 @@ func (u *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	// сбрасываем куки
-	c.SetCookie("cookie", "1", -1, "/", "", false, false)
+	c.SetCookie("token", "1", -1, "/", "", false, false)
 
 	u.logger.Info("User deleted successfully", "user", userId)
 

@@ -11,17 +11,10 @@ type Config struct {
 	Redis       RedisConfig     `mapstructure:"redis"`
 	Logger      LoggerConfig    `mapstructure:"logger"`
 	Telemetry   TelemetryConfig `mapstructure:"telemetry"`
-}
-
-type RedisConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	DB       int    `mapstructure:"db"`
-}
+} 
 
 type ServerConfig struct {
-	Port int    `mapstructure:"port"`
+	Port string    `mapstructure:"port"`
 	Host string `mapstructure:"host"`
 }
 
@@ -37,6 +30,13 @@ type DatabaseConfig struct {
 type JWTConfig struct {
 	Secret     string        `mapstructure:"secret"`
 	Expiration time.Duration `mapstructure:"expiration"`
+}
+
+type RedisConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 type LoggerConfig struct {

@@ -1,8 +1,8 @@
 environment: "development"
 
 server:
-  port: 8080
-  host: "localhost"
+  port: "8080"
+  host: "0.0.0.0"
 
 database:
   host: "localhost"
@@ -20,3 +20,7 @@ redis:
   host: "localhost"
   port: 6379
   password: "your_redis_password"
+
+telemetry:
+  endpoint: "localhost:4317"
+  service_name: "ToDoApp"

@@ -67,7 +67,7 @@ func (u *AuthHandler) SignUp(c *gin.Context) {
 	}
 
 	// устанавливаем куки
-	c.SetCookie("cookie", token, 3600, "/", "", false, true)
+	c.SetCookie("token", token, 3600, "/", "", false, true)
 
 	u.logger.Info("User SignUp successfully", "user", user.Email)
 
@@ -128,7 +128,7 @@ func (u *AuthHandler) SignIn(c *gin.Context) {
 	}
 
 	// устанавливаем куки
-	c.SetCookie("cookie", token, 3600, "/", "", false, true)
+	c.SetCookie("token", token, 3600, "/", "", false, true)
 
 	u.logger.Info("User SignIn successfully", "user", user.Email)
 
@@ -149,7 +149,7 @@ func (u *AuthHandler) SignOut(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("cookie", "1", -1, "/", "", false, false)
+	c.SetCookie("token", "1", -1, "/", "", false, false)
 
 	u.logger.Info("User SignOut successful", "user", userId)
 

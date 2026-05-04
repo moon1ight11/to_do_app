@@ -12,7 +12,7 @@ func Auth(jwtService jwt.TokenService, logger logger.LoggerInterface) gin.Handle
 	return func(c *gin.Context) {
 		defer c.Next()
 
-		value, err := c.Cookie("cookie")
+		value, err := c.Cookie("token")
 		if err != nil {
 			logger.Error("Error in get value from cookie in AuthMiddle:", "error", err)
 			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
