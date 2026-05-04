@@ -15,7 +15,7 @@ func TestGenerateToken(t *testing.T) {
 	service := NewJWTService(secret, expiration)
 
 	userId := uuid.New()
-	token, err := service.GenerateToken(userId, "Feda", "Feda@gmail.com")
+	token, err := service.GenerateToken(userId, "Test", "Test@gmail.com")
 	if err != nil {
 		t.Error("expected no error, have:", err)
 	}
@@ -34,8 +34,8 @@ func TestParseToken(t *testing.T) {
 	service := NewJWTService(secret, expiration)
 
 	userId := uuid.New()
-	userName := "Feda"
-	userEmail := "Feda@gmail.com"
+	userName := "Test2"
+	userEmail := "Test2@gmail.com"
 
 	tokenIn, err := service.GenerateToken(userId, userName, userEmail)
 	if err != nil {
@@ -55,8 +55,8 @@ func TestParseToken(t *testing.T) {
 	}
 
 	// не совпал идентификатор
-	if claims.UserId != &userId {
-		t.Errorf("User id expected %v, got %v", userId, claims.UserId)
+	if *claims.UserId != userId {
+		 t.Errorf("User id expected %s, got %s", userId, *claims.UserId)
 	}
 
 	// не совпало имя
@@ -74,7 +74,7 @@ func TestParseToken(t *testing.T) {
 func TestTokenWithInvalidSignature(t *testing.T) {
 	// создаем сервис и генерируем токен с шифром №1
 	service1 := NewJWTService("111111", time.Hour)
-	token1, err := service1.GenerateToken(uuid.New(), "Feda", "Feda@gmail.com")
+	token1, err := service1.GenerateToken(uuid.New(), "Test3", "Test3@gmail.com")
 	if err != nil {
 		t.Fatalf("expected no error, have: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestTokenWithInvalidSignature(t *testing.T) {
 func TestTokenWithWrongExpTime(t *testing.T) {
 	// создаем сервис, который генерирует просроченные токены
 	service := NewJWTService("123456", -time.Hour)
-	token, err := service.GenerateToken(uuid.New(), "Feda", "Feda@gmail.com")
+	token, err := service.GenerateToken(uuid.New(), "Test4", "Test4@gmail.com")
 	if err != nil {
 		t.Fatalf("expected no error, have: %v", err)
 	}
@@ -117,8 +117,8 @@ func TestTokenWithWrongMethod(t *testing.T) {
 
 	claims := Claims{
 		UserId:    &newUUID,
-		UserName:  "Feda",
-		UserEmail: "Feda@gmail.com",
+		UserName:  "Test5",
+		UserEmail: "Test5@gmail.com",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 		},
