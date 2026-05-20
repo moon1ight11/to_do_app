@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net/http/pprof"
 	"todoapp/internal/api/handlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
@@ -40,6 +41,20 @@ func (r *Router) Init(
 	cfg *config.Config,
 	metrics *metrics.Metrics,
 ) {
+
+	r.ginEngine.GET("/debug/pprof/", gin.WrapF(pprof.Index))
+	r.ginEngine.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+	r.ginEngine.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+	r.ginEngine.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	r.ginEngine.POST("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	r.ginEngine.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+	r.ginEngine.GET("/debug/pprof/heap", gin.WrapF(pprof.Index))
+	r.ginEngine.GET("/debug/pprof/goroutine", gin.WrapF(pprof.Index))
+	r.ginEngine.GET("/debug/pprof/threadcreate", gin.WrapF(pprof.Index))
+	r.ginEngine.GET("/debug/pprof/block", gin.WrapF(pprof.Index))
+	r.ginEngine.GET("/debug/pprof/mutex", gin.WrapF(pprof.Index))
+	r.ginEngine.GET("/debug/pprof/allocs", gin.WrapF(pprof.Index))
+
 	r.ginEngine.Use(middleware.Tracing(cfg.ServiceName))
 	r.ginEngine.Use(metrics.GinMiddleware())
 	r.ginEngine.Use(middleware.CORS())

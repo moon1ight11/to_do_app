@@ -9,6 +9,7 @@ Backend-сервис для управления задачами с подде�
 - [API Документация](#api-документация)
 - [Особенности реализации](#особенности-реализации)
   - [Кэширование](#кэширование)
+  - [Профилирование](#профилирование-pprof)
   - [Трейсинг](#трейсинг)
   - [Логирование](#логирование)
   - [Graceful Shutdown](#graceful-shutdown)
@@ -43,6 +44,7 @@ Backend-сервис для управления задачами с подде�
 - **Тестирование** — testify (assert + mock), miniredis для кэша
 - **Конфигурация** - Viper (YAML)
 - **Кэширование** - Redis 7 (cache-aside с автоинвалидацией)
+- **Профилирование** — `pprof` (CPU, memory, goroutines)
 - **Мониторинг** - Prometheus + Grafana (готовый дашборд)
 - **Трейсинг** - OpenTelemetry + Jaeger
 - **Документация** — OpenAPI 3.0
@@ -82,6 +84,7 @@ Backend-сервис для управления задачами с подде�
 
 ### Доступ к сервисам
 API: http://localhost:8080
+pprof: http://localhost:8080/debug/pprof/
 Prometheus: http://localhost:9090
 Grafana: http://localhost:3000 (admin/admin)
 Jaeger: http://localhost:16686
@@ -102,6 +105,13 @@ Jaeger: http://localhost:16686
     - settings:{user_id} — настройки пользователя
     - task:{task_id} — отдельная задача
     - user_tasks:{user_id} — список задач пользователя
+
+### Профилирование (pprof)
+Приложение включает `net/http/pprof` для детального анализа производительности:
+- **Интеграция в Gin:** pprof эндпоинты зарегистрированы как группа маршрутов `/debug/pprof/*`
+- **Доступные профили:** goroutine, heap, allocs, block, mutex, threadcreate, profile, trace
+- **Использование в разработке:** позволяет находить утечки горутин, избыточные аллокации и блокировки
+- **Графический анализ:** поддержка flame graphs, call graphs и top-функций через `go tool pprof`
 
 ### Трейсинг
 Распределенная трассировка с помощью `OpenTelemetry` и `Jaeger`:
