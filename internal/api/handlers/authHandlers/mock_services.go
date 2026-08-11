@@ -8,7 +8,7 @@ import (
 )
 
 type MockUserService struct {
-	AddUserFunc        func(ctx context.Context, user models.UserAuth) (uuid.UUID, error)
+	AddUserFunc         func(ctx context.Context, user models.UserAuth) (uuid.UUID, error)
 	CheckAndGetUserFunc func(ctx context.Context, user models.UserAuth) (models.UserRequest, error)
 }
 
