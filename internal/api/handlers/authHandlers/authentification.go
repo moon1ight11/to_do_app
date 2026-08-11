@@ -3,14 +3,13 @@ package authhandlers
 import (
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/metrics"
-	"todoapp/internal/services"
 	"todoapp/pkg/logger"
 
 	"go.opentelemetry.io/otel/trace"
 )
 
 type AuthHandler struct {
-	userService services.UsersServiceInterface
+	userService userService
 	jwtService  jwt.TokenService
 	logger      logger.LoggerInterface
 	tracer      trace.Tracer
@@ -18,7 +17,7 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(
-	userService services.UsersServiceInterface,
+	userService userService,
 	jwtService jwt.TokenService,
 	logger logger.LoggerInterface,
 	tracer trace.Tracer,

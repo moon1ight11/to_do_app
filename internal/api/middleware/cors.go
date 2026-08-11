@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// мидлвар для КОРС-разрешений
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "http://localhost:3000")

@@ -3,31 +3,32 @@ package tasksrepos
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
-// отображение всех родительских задач пользователя
 func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, error) {
 	ctx, span := db.tracer.Start(ctx, "repo.TasksByOwnerId")
 	defer span.End()
 
 	query := `
-				SELECT id, title, description, owner_id, start_at, end_at, completed_at IS NOT NULL as completed
-				FROM todo_app.tasks
-				WHERE owner_id = $1 AND parent_task_id IS NULL
-				ORDER BY created_at DESC
-			`
-	var tasks []Task
-	rows, err := db.DB.QueryContext(ctx, query, ownerId)
+		SELECT id, title, description, owner_id, start_at, end_at, completed_at IS NOT NULL as completed
+		FROM todo_app.tasks
+		WHERE owner_id = $1 AND parent_task_id IS NULL
+		ORDER BY created_at DESC
+	`
+
+	rows, err := db.DB().QueryContext(ctx, query, ownerId)
 	if err != nil {
 		span.RecordError(err)
-		return nil, fmt.Errorf("error in TasksByOwnerId query: %w", err)
+		return nil, fmt.Errorf("tasksrepos.TasksByOwnerId: query: %w", err)
 	}
 	defer rows.Close()
 
+	var tasks []Task
 	for rows.Next() {
 		var task Task
-		err := rows.Scan(
+		if err := rows.Scan(
 			&task.Id,
 			&task.Title,
 			&task.Description,
@@ -35,39 +36,44 @@ func (db *Repo) TasksByOwnerId(ctx context.Context, ownerId uuid.UUID) ([]Task, 
 			&task.StartAt,
 			&task.EndAt,
 			&task.CompletedAt,
-		)
-		if err != nil {
+		); err != nil {
 			span.RecordError(err)
-			return nil, fmt.Errorf("error in TasksByOwnerId scan: %w", err)
+			return nil, fmt.Errorf("tasksrepos.TasksByOwnerId: scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
+
+	if err := rows.Err(); err != nil {
+		span.RecordError(err)
+		return nil, fmt.Errorf("tasksrepos.TasksByOwnerId: rows: %w", err)
+	}
+
 	return tasks, nil
 }
 
-// отображение всех подзадач одной родительской задачи пользователя
 func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentId uuid.UUID) ([]Task, error) {
 	ctx, span := db.tracer.Start(ctx, "repo.SubtasksByTaskId")
 	defer span.End()
 
 	query := `
-				SELECT id, parent_task_id, title, description, owner_id, start_at, end_at,
-				completed_at IS NOT NULL as completed
-				FROM todo_app.tasks
-				WHERE owner_id = $1 AND parent_task_id = $2
-				ORDER BY created_at DESC
-			`
-	var tasks []Task
-	rows, err := db.DB.QueryContext(ctx, query, ownerId, parentId)
+		SELECT id, parent_task_id, title, description, owner_id, start_at, end_at,
+		completed_at IS NOT NULL as completed
+		FROM todo_app.tasks
+		WHERE owner_id = $1 AND parent_task_id = $2
+		ORDER BY created_at DESC
+	`
+
+	rows, err := db.DB().QueryContext(ctx, query, ownerId, parentId)
 	if err != nil {
 		span.RecordError(err)
-		return nil, fmt.Errorf("error in SubtasksByTaskId query: %w", err)
+		return nil, fmt.Errorf("tasksrepos.SubtasksByTaskId: query: %w", err)
 	}
 	defer rows.Close()
 
+	var tasks []Task
 	for rows.Next() {
 		var task Task
-		err := rows.Scan(
+		if err := rows.Scan(
 			&task.Id,
 			&task.ParentId,
 			&task.Title,
@@ -76,34 +82,33 @@ func (db *Repo) SubtasksByTaskId(ctx context.Context, ownerId uuid.UUID, parentI
 			&task.StartAt,
 			&task.EndAt,
 			&task.CompletedAt,
-		)
-		if err != nil {
+		); err != nil {
 			span.RecordError(err)
-			return nil, fmt.Errorf("error in SubtasksByTaskId scan: %w", err)
+			return nil, fmt.Errorf("tasksrepos.SubtasksByTaskId: scan: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
+
+	if err := rows.Err(); err != nil {
+		span.RecordError(err)
+		return nil, fmt.Errorf("tasksrepos.SubtasksByTaskId: rows: %w", err)
+	}
+
 	return tasks, nil
 }
 
-// поиск задачи по id
 func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUID) (Task, error) {
 	ctx, span := db.tracer.Start(ctx, "repo.TaskById")
 	defer span.End()
 
 	query := `
-				SELECT id, title, description, owner_id, start_at, end_at, parent_task_id
-				FROM todo_app.tasks
-				WHERE id = $1 AND owner_id = $2
-			`
+		SELECT id, title, description, owner_id, start_at, end_at, parent_task_id
+		FROM todo_app.tasks
+		WHERE id = $1 AND owner_id = $2
+	`
 
 	var task Task
-	err := db.DB.QueryRowContext(
-		ctx,
-		query,
-		taskId,
-		ownerId,
-	).Scan(
+	err := db.DB().QueryRowContext(ctx, query, taskId, ownerId).Scan(
 		&task.Id,
 		&task.Title,
 		&task.Description,
@@ -112,10 +117,9 @@ func (db *Repo) TaskById(ctx context.Context, taskId uuid.UUID, ownerId uuid.UUI
 		&task.EndAt,
 		&task.ParentId,
 	)
-
 	if err != nil {
 		span.RecordError(err)
-		return Task{}, fmt.Errorf("error in TaskById query: %w", err)
+		return Task{}, fmt.Errorf("tasksrepos.TaskById: query: %w", err)
 	}
 
 	return task, nil

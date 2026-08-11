@@ -3,51 +3,45 @@ package tasksservice
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 	"todoapp/internal/api/models"
 	"todoapp/internal/storage/repos/tasksrepos"
 )
 
-// создание задачи
 func (t *TasksService) CreateTask(ctx context.Context, task models.Task) error {
 	ctx, span := t.tracer.Start(ctx, "service.CreateTask")
 	defer span.End()
 
-	// если есть временные рамки - время на выполнение не должно быть отрицательным
 	if task.StartAt != nil && task.EndAt != nil {
 		if task.EndAt.Before(*task.StartAt) {
-			span.RecordError(fmt.Errorf("error in CreateTask: end_at cannot be before start_at"))
-			return fmt.Errorf("error in CreateTask: end_at cannot be before start_at")
+			err := fmt.Errorf("end_at before start_at")
+			span.RecordError(err)
+			return fmt.Errorf("tasksservice.CreateTask: %w", err)
 		}
 	}
 
-	// приводим тип
 	taskrepo := taskFromApiToRepo(&task)
 
-	// добавляем задачу в репозиторий
-	err := t.tasksRepo.CreateTask(ctx, *taskrepo)
-	if err != nil {
+	if err := t.tasksRepo.CreateTask(ctx, *taskrepo); err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in CreateTask: %w", err)
+		return fmt.Errorf("tasksservice.CreateTask: %w", err)
 	}
 
 	return nil
 }
 
-// получение списка всех задач пользователя
 func (t *TasksService) GetAllTasks(ctx context.Context, userId uuid.UUID) ([]models.Task, error) {
 	ctx, span := t.tracer.Start(ctx, "service.GetAllTasks")
 	defer span.End()
 
-	// получаем список всех задач пользователя
 	tasks, err := t.tasksRepo.TasksByOwnerId(ctx, userId)
 	if err != nil {
 		span.RecordError(err)
-		return nil, fmt.Errorf("error in GetAllTasks: %w", err)
+		return nil, fmt.Errorf("tasksservice.GetAllTasks: %w", err)
 	}
 
-	// рекурсивно загружаем подзадачи для каждой родительской задачи
 	var tasksApi []models.Task
 	for i := range tasks {
 		taskApi := t.buildTaskWithSubtasks(ctx, &tasks[i], userId)
@@ -57,30 +51,25 @@ func (t *TasksService) GetAllTasks(ctx context.Context, userId uuid.UUID) ([]mod
 	return tasksApi, nil
 }
 
-// получение одной задачи
 func (t *TasksService) GetOneTask(ctx context.Context, taskId uuid.UUID, userId uuid.UUID) (models.Task, error) {
 	ctx, span := t.tracer.Start(ctx, "service.GetOneTask")
 	defer span.End()
 
-	// получаем задачу
 	task, err := t.tasksRepo.TaskById(ctx, taskId, userId)
 	if err != nil {
 		span.RecordError(err)
-		return models.Task{}, fmt.Errorf("error in GetOneTask: %w", err)
+		return models.Task{}, fmt.Errorf("tasksservice.GetOneTask: %w", err)
 	}
 
-	ownerId := task.OwnerId
-	if ownerId == uuid.Nil {
-		span.RecordError(fmt.Errorf("error in GetOneTask: ownerId is nil"))
-		return models.Task{}, fmt.Errorf("error in GetOneTask: ownerId is nil")
+	if task.OwnerId == uuid.Nil {
+		err := fmt.Errorf("ownerId is nil")
+		span.RecordError(err)
+		return models.Task{}, fmt.Errorf("tasksservice.GetOneTask: %w", err)
 	}
 
-	taskApi := t.buildTaskWithSubtasks(ctx, &task, ownerId)
-
-	return taskApi, nil
+	return t.buildTaskWithSubtasks(ctx, &task, task.OwnerId), nil
 }
 
-// изменение полей задачи
 func (t *TasksService) ChangeTask(
 	ctx context.Context,
 	taskId uuid.UUID,
@@ -94,150 +83,126 @@ func (t *TasksService) ChangeTask(
 	ctx, span := t.tracer.Start(ctx, "service.ChangeTask")
 	defer span.End()
 
-	// запускаем транзакцию
-	transaction, err := t.tasksRepo.DB.BeginTx(ctx, nil)
+	transaction, err := t.tasksRepo.DB().BeginTx(ctx, nil)
 	if err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in ChangeTask BeginTx: %w", err)
+		return fmt.Errorf("tasksservice.ChangeTask: begin tx: %w", err)
 	}
-
-	// отложенно откатываем транзакцию
 	defer transaction.Rollback()
 
-	// находим задачу, которую нужно изменить
 	foundTask, err := t.tasksRepo.TaskById(ctx, taskId, userId)
 	if err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in ChangeTask: %w", err)
+		return fmt.Errorf("tasksservice.ChangeTask: find task: %w", err)
 	}
 
-	// проверяем, чтобы время старта было раньше времени конца
-	// если меняются оба времени
-	if endAt != nil && startAt != nil {
-		if endAt.Before(*startAt) {
-			span.RecordError(fmt.Errorf("error in ChangeTask: end_at cannot be before start_at"))
-			return fmt.Errorf("error in ChangeTask: end_at cannot be before start_at")
-		}
-	}
-
-	// если меняется толко время начала
-	if endAt == nil && startAt != nil && foundTask.EndAt != nil {
-		if foundTask.EndAt.Before(*startAt) {
-			span.RecordError(fmt.Errorf("error in ChangeTask: end_at cannot be before start_at"))
-			return fmt.Errorf("error in ChangeTask: end_at cannot be before start_at")
-		}
-	}
-
-	// если меняется только конец
-	if startAt == nil && endAt != nil && foundTask.StartAt != nil {
-		if endAt.Before(*foundTask.StartAt) {
-			span.RecordError(fmt.Errorf("error in ChangeTask: end_at cannot be before start_at"))
-			return fmt.Errorf("error in ChangeTask: end_at cannot be before start_at")
-		}
-	}
-
-	// меняем название
-	if title != nil {
-		err := t.tasksRepo.UpdateTitle(ctx, taskId, userId, *title, transaction)
-		if err != nil {
-			span.RecordError(err)
-			return fmt.Errorf("error in ChangeTask: %w", err)
-		}
-	}
-
-	// меняем описание
-	if description != nil {
-		err := t.tasksRepo.UpdateDescription(ctx, taskId, userId, *description, transaction)
-		if err != nil {
-			span.RecordError(err)
-			return fmt.Errorf("error in ChangeTask: %w", err)
-		}
-	}
-
-	// меняем время начала
-	if startAt != nil {
-		err := t.tasksRepo.UpdateStartAt(ctx, taskId, userId, *startAt, transaction)
-		if err != nil {
-			span.RecordError(err)
-			return fmt.Errorf("error in ChangeTask: %w", err)
-		}
-	}
-
-	// меняем время завершения
-	if endAt != nil {
-		err := t.tasksRepo.UpdateEndAt(ctx, taskId, userId, *endAt, transaction)
-		if err != nil {
-			span.RecordError(err)
-			return fmt.Errorf("error in ChangeTask: %w", err)
-		}
-	}
-
-	// меняем статус задачи
-	if completedAt != nil {
-		if *completedAt == false {
-			err := t.tasksRepo.TaskUncompleted(ctx, taskId, userId, transaction)
-			if err != nil {
-				span.RecordError(err)
-				return fmt.Errorf("error in ChangeTask: %w", err)
-			}
-		} else if *completedAt == true {
-			err := t.tasksRepo.TaskCompleted(ctx, taskId, userId, transaction)
-			if err != nil {
-				span.RecordError(err)
-				return fmt.Errorf("error in ChangeTask: %w", err)
-			}
-		}
-	}
-
-	// если ошибок нет - подтверждаем транзакцию
-	err = transaction.Commit()
-	if err != nil {
+	if err := validateTimeRange(startAt, endAt, foundTask.StartAt, foundTask.EndAt); err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in ChangeTask commit: %w", err)
+		return fmt.Errorf("tasksservice.ChangeTask: %w", err)
+	}
+
+	if title != nil {
+		if err := t.tasksRepo.UpdateTitle(ctx, taskId, userId, *title, transaction); err != nil {
+			span.RecordError(err)
+			return fmt.Errorf("tasksservice.ChangeTask: update title: %w", err)
+		}
+	}
+
+	if description != nil {
+		if err := t.tasksRepo.UpdateDescription(ctx, taskId, userId, *description, transaction); err != nil {
+			span.RecordError(err)
+			return fmt.Errorf("tasksservice.ChangeTask: update description: %w", err)
+		}
+	}
+
+	if startAt != nil {
+		if err := t.tasksRepo.UpdateStartAt(ctx, taskId, userId, *startAt, transaction); err != nil {
+			span.RecordError(err)
+			return fmt.Errorf("tasksservice.ChangeTask: update start_at: %w", err)
+		}
+	}
+
+	if endAt != nil {
+		if err := t.tasksRepo.UpdateEndAt(ctx, taskId, userId, *endAt, transaction); err != nil {
+			span.RecordError(err)
+			return fmt.Errorf("tasksservice.ChangeTask: update end_at: %w", err)
+		}
+	}
+
+	if completedAt != nil {
+		if *completedAt {
+			if err := t.tasksRepo.TaskCompleted(ctx, taskId, userId, transaction); err != nil {
+				span.RecordError(err)
+				return fmt.Errorf("tasksservice.ChangeTask: complete: %w", err)
+			}
+		} else {
+			if err := t.tasksRepo.TaskUncompleted(ctx, taskId, userId, transaction); err != nil {
+				span.RecordError(err)
+				return fmt.Errorf("tasksservice.ChangeTask: uncomplete: %w", err)
+			}
+		}
+	}
+
+	if err := transaction.Commit(); err != nil {
+		span.RecordError(err)
+		return fmt.Errorf("tasksservice.ChangeTask: commit: %w", err)
 	}
 
 	return nil
 }
 
-// удаление задачи
 func (t *TasksService) DeleteTask(ctx context.Context, taskId uuid.UUID, userId uuid.UUID) error {
 	ctx, span := t.tracer.Start(ctx, "service.DeleteTask")
 	defer span.End()
 
-	// запускаем транзакцию
-	transaction, err := t.tasksRepo.DB.BeginTx(ctx, nil)
+	transaction, err := t.tasksRepo.DB().BeginTx(ctx, nil)
 	if err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in DeleteTask BeginTx: %w", err)
+		return fmt.Errorf("tasksservice.DeleteTask: begin tx: %w", err)
 	}
-
-	// отложенно откатываем транзакцию
 	defer transaction.Rollback()
 
-	// ищем задачу по id
 	deletedTask, err := t.tasksRepo.TaskById(ctx, taskId, userId)
 	if err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in DeleteTask: %w", err)
+		return fmt.Errorf("tasksservice.DeleteTask: find task: %w", err)
 	}
 
-	// удаляем задачу с подзадачами
-	err = t.tasksRepo.DeleteTask(ctx, *deletedTask.Id, userId, transaction)
-	if err != nil {
+	if err := t.tasksRepo.DeleteTask(ctx, *deletedTask.Id, userId, transaction); err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in DeleteTask: %w", err)
+		return fmt.Errorf("tasksservice.DeleteTask: delete: %w", err)
 	}
 
-	// если ошибок нет - подтверждаем транзакцию
-	err = transaction.Commit()
-	if err != nil {
+	if err := transaction.Commit(); err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in DeleteTask commit: %w", err)
+		return fmt.Errorf("tasksservice.DeleteTask: commit: %w", err)
 	}
+
 	return nil
 }
 
-// перевод типа из апи в репо
+func validateTimeRange(startAt, endAt, existingStart, existingEnd *time.Time) error {
+	if endAt != nil && startAt != nil {
+		if endAt.Before(*startAt) {
+			return fmt.Errorf("end_at before start_at")
+		}
+	}
+
+	if endAt == nil && startAt != nil && existingEnd != nil {
+		if existingEnd.Before(*startAt) {
+			return fmt.Errorf("end_at before new start_at")
+		}
+	}
+
+	if startAt == nil && endAt != nil && existingStart != nil {
+		if endAt.Before(*existingStart) {
+			return fmt.Errorf("new end_at before start_at")
+		}
+	}
+
+	return nil
+}
+
 func taskFromApiToRepo(modelTask *models.Task) *tasksrepos.Task {
 	if modelTask == nil {
 		return nil
@@ -265,7 +230,6 @@ func taskFromApiToRepo(modelTask *models.Task) *tasksrepos.Task {
 	}
 }
 
-// перевод типа из репо в апи
 func taskFromRepoToApi(repoTask *tasksrepos.Task) models.Task {
 	if repoTask == nil {
 		return models.Task{}
@@ -293,25 +257,19 @@ func taskFromRepoToApi(repoTask *tasksrepos.Task) models.Task {
 	}
 }
 
-// конструктор для рекурсии подзадач
 func (t *TasksService) buildTaskWithSubtasks(ctx context.Context, task *tasksrepos.Task, userId uuid.UUID) models.Task {
-	// получаем прямые подзадачи текущей задачи
 	subtasks, err := t.tasksRepo.SubtasksByTaskId(ctx, userId, *task.Id)
 	if err != nil {
 		return taskFromRepoToApi(task)
 	}
 
-	// рекурсивно загружаем подзадачи для каждой подзадачи
 	var subtasksApi []models.Task
 	for i := range subtasks {
 		subtaskApi := t.buildTaskWithSubtasks(ctx, &subtasks[i], userId)
 		subtasksApi = append(subtasksApi, subtaskApi)
 	}
 
-	// конвертируем основную задачу
 	taskApi := taskFromRepoToApi(task)
-
-	// добавляем подзадачи
 	if len(subtasksApi) > 0 {
 		taskApi.Subtasks = &subtasksApi
 	}

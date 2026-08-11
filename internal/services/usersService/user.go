@@ -1,17 +1,13 @@
 package usersservice
 
-import (
-	"todoapp/internal/storage/repos/usersrepos"
-
-	"go.opentelemetry.io/otel/trace"
-)
+import "go.opentelemetry.io/otel/trace"
 
 type UserService struct {
-	userRepo *usersrepos.Repo
+	userRepo userRepo
 	tracer   trace.Tracer
 }
 
-func NewUserService(userRepo *usersrepos.Repo, tracer trace.Tracer) *UserService {
+func NewUserService(userRepo userRepo, tracer trace.Tracer) *UserService {
 	return &UserService{
 		userRepo: userRepo,
 		tracer:   tracer,

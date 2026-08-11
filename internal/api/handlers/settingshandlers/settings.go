@@ -2,7 +2,6 @@ package settingshandlers
 
 import (
 	"todoapp/internal/metrics"
-	"todoapp/internal/services"
 	"todoapp/internal/storage/cache"
 	"todoapp/pkg/logger"
 
@@ -10,7 +9,7 @@ import (
 )
 
 type SettingsHandler struct {
-	settingsService services.SettingsServiceInterface
+	settingsService settingsService
 	logger          logger.LoggerInterface
 	cacheService    cache.CacheInterface
 	tracer          trace.Tracer
@@ -18,7 +17,7 @@ type SettingsHandler struct {
 }
 
 func NewSettingsHandler(
-	settingsService services.SettingsServiceInterface,
+	settingsService settingsService,
 	logger logger.LoggerInterface,
 	cacheService cache.CacheInterface,
 	tracer trace.Tracer,

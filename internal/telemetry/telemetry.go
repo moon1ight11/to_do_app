@@ -17,16 +17,14 @@ import (
 func Init(cfg *config.Config) (trace.Tracer, error) {
 	ctx := context.Background()
 
-	// создание экпортера
 	exp, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithEndpoint(cfg.Telemetry.Endpoint),
 		otlptracegrpc.WithInsecure(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Error in TelemetryInit: %w", err)
+		return nil, fmt.Errorf("telemetry.Init: create exporter: %w", err)
 	}
 
-	// установка метаданных сервиса
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceName(cfg.Telemetry.ServiceName),
@@ -34,10 +32,9 @@ func Init(cfg *config.Config) (trace.Tracer, error) {
 		resource.WithFromEnv(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Error in TelemetryInit: %w", err)
+		return nil, fmt.Errorf("telemetry.Init: create resource: %w", err)
 	}
 
-	// создание трейс-провайдера
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exp),
 		sdktrace.WithResource(res),
@@ -49,7 +46,6 @@ func Init(cfg *config.Config) (trace.Tracer, error) {
 		propagation.Baggage{},
 	))
 
-	// инициализация трейсера
 	tracer := tp.Tracer(cfg.Telemetry.ServiceName)
 
 	return tracer, nil

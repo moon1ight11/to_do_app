@@ -3,86 +3,70 @@ package settingsservice
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"regexp"
+
+	"github.com/google/uuid"
 	"todoapp/internal/api/models"
 )
 
-// получение настроек
 func (s *SettingsService) GetSettings(ctx context.Context, userId uuid.UUID) (models.Setting, error) {
 	ctx, span := s.tracer.Start(ctx, "service.GetSettings")
 	defer span.End()
 
-	// получаем настройки из репозитория
 	settings, err := s.settingsRepo.SettingsById(ctx, userId)
 	if err != nil {
 		span.RecordError(err)
-		return models.Setting{}, fmt.Errorf("error in GetSettings: %w", err)
+		return models.Setting{}, fmt.Errorf("settingsservice.GetSettings: %w", err)
 	}
 
-	// приводим тип
-	var settingsApi models.Setting
-	settingsApi.UserTz = settings.UserTz
-	settingsApi.TimeDuration = settings.TimeDuration
-
-	return settingsApi, nil
+	return models.Setting{
+		TimeDuration: settings.TimeDuration,
+		UserTz:       settings.UserTz,
+	}, nil
 }
 
-// изменение настроек
 func (s *SettingsService) UpdateSettings(ctx context.Context, userId uuid.UUID, duration *float64, tz *string) error {
 	ctx, span := s.tracer.Start(ctx, "service.UpdateSettings")
 	defer span.End()
 
-	// если обновляется временная зона
 	if tz != nil {
-		// проверяем, похожа ли входящая строа на временную зону
 		pattern := `^UTC([+-](?:1[0-4]|[0-9])(?::?[0-5][0-9])?)?$`
 		matched, err := regexp.MatchString(pattern, *tz)
 		if err != nil {
 			span.RecordError(err)
-			return fmt.Errorf("error in UpdateSettings: %w", err)
+			return fmt.Errorf("settingsservice.UpdateSettings: validate tz: %w", err)
 		}
-
-		// если нет - прокидываем
 		if !matched {
-			span.RecordError(fmt.Errorf("error in UpdateSettings: timezone not looks like timezone"))
-			return fmt.Errorf("error in UpdateSettings: timezone not looks like timezone")
+			err := fmt.Errorf("timezone not valid: %s", *tz)
+			span.RecordError(err)
+			return fmt.Errorf("settingsservice.UpdateSettings: %w", err)
 		}
 	}
 
-	// открываем транзакцию
-	transaction, err := s.settingsRepo.DB.BeginTx(ctx, nil)
+	transaction, err := s.settingsRepo.DB().BeginTx(ctx, nil)
 	if err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in UpdateSettings BeginTx: %w", err)
+		return fmt.Errorf("settingsservice.UpdateSettings: begin tx: %w", err)
 	}
-
-	// отложенно откатываем транзакцию
 	defer transaction.Rollback()
 
-	// если меняем продолжительность
 	if duration != nil {
-		err := s.settingsRepo.UpdateDuration(ctx, *duration, userId, transaction)
-		if err != nil {
+		if err := s.settingsRepo.UpdateDuration(ctx, *duration, userId, transaction); err != nil {
 			span.RecordError(err)
-			return fmt.Errorf("error in UpdateSettings: %w", err)
+			return fmt.Errorf("settingsservice.UpdateSettings: update duration: %w", err)
 		}
 	}
 
-	// если меняем таймзону
 	if tz != nil {
-		err := s.settingsRepo.UpdateTZ(ctx, *tz, userId, transaction)
-		if err != nil {
+		if err := s.settingsRepo.UpdateTZ(ctx, *tz, userId, transaction); err != nil {
 			span.RecordError(err)
-			return fmt.Errorf("error in UpdateSettings: %w", err)
+			return fmt.Errorf("settingsservice.UpdateSettings: update tz: %w", err)
 		}
 	}
 
-	// если все ок - подтверждаем транзакцию
-	err = transaction.Commit()
-	if err != nil {
+	if err := transaction.Commit(); err != nil {
 		span.RecordError(err)
-		return fmt.Errorf("error in UpdateSettings commit: %w", err)
+		return fmt.Errorf("settingsservice.UpdateSettings: commit: %w", err)
 	}
 
 	return nil

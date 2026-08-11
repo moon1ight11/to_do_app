@@ -9,7 +9,6 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-// соединение с DB и return экземпляра
 func NewStorage(cfg *config.Config) (*DataBase, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Database.Host,
@@ -21,32 +20,27 @@ func NewStorage(cfg *config.Config) (*DataBase, error) {
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open db: %w", err)
+		return nil, fmt.Errorf("storage.NewStorage: open db: %w", err)
 	}
 
-	err = db.Ping()
-	if err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("storage.NewStorage: ping db: %w", err)
 	}
 
-	datebase := DataBase{
+	return &DataBase{
 		DB:            db,
 		MigrationsDir: cfg.Database.MigrationsDir,
-	}
-
-	return &datebase, nil
+	}, nil
 }
 
-// метод DB для применения миграций
 func (d *DataBase) UpMigrations() error {
 	goose.SetBaseFS(nil)
 	if err := goose.SetDialect("postgres"); err != nil {
-		return err
+		return fmt.Errorf("storage.UpMigrations: set dialect: %w", err)
 	}
 
-	err := goose.Up(d.DB, d.MigrationsDir)
-	if err != nil {
-		return err
+	if err := goose.Up(d.DB, d.MigrationsDir); err != nil {
+		return fmt.Errorf("storage.UpMigrations: run migrations: %w", err)
 	}
 
 	return nil

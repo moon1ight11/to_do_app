@@ -11,7 +11,7 @@ servers:
 paths:
   /v1/auth/sign-up:
     post:
-      summary: Метод для регистрации
+      summary: Регистрация
       tags:
         - Auth
       requestBody:
@@ -40,7 +40,7 @@ paths:
 
   /v1/auth/sign-in:
     post:
-      summary: Метод для аутентификации
+      summary: Аутентификация
       tags:
         - Auth
       requestBody:
@@ -63,9 +63,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /v1/auth/sign-out:
+  /v1/private/sign-out:
     post:
-      summary: Метод для деаутентификации
+      summary: Разлогин
       tags:
         - Auth
       security:
@@ -86,7 +86,7 @@ paths:
 
   /v1/private/users:
     get:
-      summary: Метод для получения информации о пользователе
+      summary: Получение информации о пользователе
       tags:
         - Users
       security:
@@ -106,7 +106,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     patch:
-      summary: Метод для обновления информации пользователя
+      summary: Обновление информации пользователя
       tags:
         - Users
       security:
@@ -148,7 +148,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     delete:
-      summary: Метод для удаления пользователя
+      summary: Удаление пользователя
       tags:
         - Users
       security:
@@ -169,7 +169,7 @@ paths:
 
   /v1/private/settings:
     get:
-      summary: Метод получения настроек пользователя
+      summary: Получение настроек пользователя
       tags:
         - Settings
       security:
@@ -189,7 +189,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     patch:
-      summary: Метод для изменения настроек пользователя
+      summary: Изменение настроек пользователя
       tags:
         - Settings
       security:
@@ -199,15 +199,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Settings"
-              description: Должно быть заполнено хотябы одно поле
+              $ref: "#/components/schemas/SettingsUpdate"
+              description: Должно быть заполнено хотя бы одно поле
       responses:
         "200":
           description: Изменение настроек прошло успешно
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SettingsUpdate"
+                $ref: "#/components/schemas/Settings"
         "default":
           description: Ошибка
           content:
@@ -217,7 +217,7 @@ paths:
 
   /v1/private/tasks:
     get:
-      summary: Метод для получения всех задач пользователя
+      summary: Получение всех задач пользователя
       tags:
         - Tasks
       security:
@@ -237,7 +237,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     post:
-      summary: Метод для создания задачи
+      summary: Создание задачи
       tags:
         - Tasks
       security:
@@ -264,7 +264,7 @@ paths:
 
   /v1/private/tasks/{task_id}:
     get:
-      summary: Метод для получения одной задачи пользователя
+      summary: Получение одной задачи пользователя
       tags:
         - Tasks
       security:
@@ -292,7 +292,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     patch:
-      summary: Метод для изменения задачи
+      summary: Изменение задачи
       tags:
         - Tasks
       security:
@@ -311,7 +311,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/TaskRequest"
-              description: Должно быть заполнено хотябы одно поле
+              description: Должно быть заполнено хотя бы одно поле
 
       responses:
         "200":
@@ -328,7 +328,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     delete:
-      summary: Метод для удаления задачи
+      summary: Удаление задачи
       tags:
         - Tasks
       security:
@@ -360,12 +360,16 @@ components:
     cookieAuth:
       type: apiKey
       in: cookie
-      name: cookie
+      name: token
       description: Cookie-based аутентификация
 
   schemas:
     UserSignUp:
       type: object
+      required:
+        - user_name
+        - user_pass
+        - user_email
       properties:
         user_name:
           type: string
@@ -379,6 +383,9 @@ components:
 
     UserSignIn:
       type: object
+      required:
+        - user_pass
+        - user_email
       properties:
         user_pass:
           type: string
@@ -404,7 +411,7 @@ components:
       type: object
       properties:
         time_duration:
-          type: integer
+          type: number
           example: 43200
         user_tz:
           type: string
@@ -414,7 +421,7 @@ components:
       type: object
       properties:
         time_duration:
-          type: integer
+          type: number
           example: 43200
           nullable: true
         user_tz:

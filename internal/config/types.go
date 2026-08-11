@@ -13,11 +13,13 @@ type Config struct {
 	Telemetry   TelemetryConfig `mapstructure:"telemetry"`
 }
 
+// конфиг сервера
 type ServerConfig struct {
 	Port string `mapstructure:"port"`
 	Host string `mapstructure:"host"`
 }
 
+// конфиг БД
 type DatabaseConfig struct {
 	Host          string `mapstructure:"host"`
 	Port          int    `mapstructure:"port"`
@@ -27,11 +29,13 @@ type DatabaseConfig struct {
 	MigrationsDir string `mapstructure:"migrationsDir"`
 }
 
+// конфиг JWt
 type JWTConfig struct {
 	Secret     string        `mapstructure:"secret"`
 	Expiration time.Duration `mapstructure:"expiration"`
 }
 
+// конфиг редис
 type RedisConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     string `mapstructure:"port"`
@@ -39,10 +43,12 @@ type RedisConfig struct {
 	DB       int    `mapstructure:"db"`
 }
 
+// конфиг логгера
 type LoggerConfig struct {
 	FilePath string `mapstructure:"file_path"`
 }
 
+// конфиг телеметрии
 type TelemetryConfig struct {
 	Endpoint    string `mapstructure:"endpoint"`
 	ServiceName string `mapstructure:"service_name"`

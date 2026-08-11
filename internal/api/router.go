@@ -2,14 +2,15 @@ package api
 
 import (
 	"net/http/pprof"
+
+	"github.com/gin-gonic/gin"
+
 	"todoapp/internal/api/handlers"
 	"todoapp/internal/api/jwt"
 	"todoapp/internal/api/middleware"
 	"todoapp/internal/config"
 	"todoapp/internal/metrics"
 	"todoapp/pkg/logger"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Router struct {
@@ -37,11 +38,41 @@ func NewRouter(
 
 func (r *Router) Init(
 	jwtService jwt.TokenService,
-	logger logger.LoggerInterface,
+	l logger.LoggerInterface,
 	cfg *config.Config,
-	metrics *metrics.Metrics,
+	m *metrics.Metrics,
 ) {
+	r.registerPprof()
+	r.ginEngine.Use(middleware.Tracing(cfg.ServiceName))
+	r.ginEngine.Use(m.GinMiddleware())
+	r.ginEngine.Use(middleware.CORS())
+	m.RegisterMetricsHandler(r.ginEngine, "/metrics")
 
+	privateGroup := r.ginEngine.Group("/v1/private")
+	authGroup := r.ginEngine.Group("/v1/auth")
+
+	privateGroup.Use(middleware.Auth(jwtService, l))
+
+	authGroup.POST("/sign-up", r.authHandler.SignUp)
+	authGroup.POST("/sign-in", r.authHandler.SignIn)
+
+	privateGroup.POST("/sign-out", r.authHandler.SignOut)
+
+	privateGroup.GET("/users", r.userHandler.GetUser)
+	privateGroup.PATCH("/users", r.userHandler.UpdateUser)
+	privateGroup.DELETE("/users", r.userHandler.DeleteUser)
+
+	privateGroup.GET("/settings", r.settingsHandler.GetSettings)
+	privateGroup.PATCH("/settings", r.settingsHandler.UpdateSettings)
+
+	privateGroup.POST("/tasks", r.tasksHandler.CreateTask)
+	privateGroup.GET("/tasks", r.tasksHandler.GetTasks)
+	privateGroup.GET("/tasks/:task_id", r.tasksHandler.GetTaskById)
+	privateGroup.PATCH("/tasks/:task_id", r.tasksHandler.UpdateTask)
+	privateGroup.DELETE("/tasks/:task_id", r.tasksHandler.DeleteTask)
+}
+
+func (r *Router) registerPprof() {
 	r.ginEngine.GET("/debug/pprof/", gin.WrapF(pprof.Index))
 	r.ginEngine.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
 	r.ginEngine.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
@@ -54,53 +85,6 @@ func (r *Router) Init(
 	r.ginEngine.GET("/debug/pprof/block", gin.WrapF(pprof.Index))
 	r.ginEngine.GET("/debug/pprof/mutex", gin.WrapF(pprof.Index))
 	r.ginEngine.GET("/debug/pprof/allocs", gin.WrapF(pprof.Index))
-
-	r.ginEngine.Use(middleware.Tracing(cfg.ServiceName))
-	r.ginEngine.Use(metrics.GinMiddleware())
-	r.ginEngine.Use(middleware.CORS())
-
-	metrics.RegisterMetricsHandler(r.ginEngine, "/metrics")
-
-	// группировка роутов
-	privateGroup := r.ginEngine.Group("/v1/private")
-	authGroup := r.ginEngine.Group("/v1/auth")
-
-	// MIDDLEWARES //
-	privateGroup.Use(middleware.Auth(jwtService, logger))
-
-	// АУТЕНТИФИКАЦИЯ //
-	// регистрация
-	authGroup.POST("/sign-up", r.authHandler.SignUp)
-	// авторизация
-	authGroup.POST("/sign-in", r.authHandler.SignIn)
-	// разлогин
-	authGroup.POST("/sign-out", r.authHandler.SignOut)
-
-	// ЮЗЕРЫ //
-	// получение данных пользователя
-	privateGroup.GET("/users", r.userHandler.GetUser)
-	// обновление пользователя
-	privateGroup.PATCH("/users", r.userHandler.UpdateUser)
-	// удаление пользователя
-	privateGroup.DELETE("/users", r.userHandler.DeleteUser)
-
-	// НАСТРОЙКИ //
-	// получение настроек пользователя
-	privateGroup.GET("/settings", r.settingsHandler.GetSettings)
-	// изменение настроек
-	privateGroup.PATCH("/settings", r.settingsHandler.UpdateSettings)
-
-	// ЗАДАЧИ //
-	// создание задачи
-	privateGroup.POST("/tasks", r.tasksHandler.CreateTask)
-	// получение всех задач пользователя
-	privateGroup.GET("/tasks", r.tasksHandler.GetTasks)
-	// получение одной задачи по id
-	privateGroup.GET("/tasks/:task_id", r.tasksHandler.GetTaskById)
-	// изменение задачи
-	privateGroup.PATCH("/tasks/:task_id", r.tasksHandler.UpdateTask)
-	// удаление задачи
-	privateGroup.DELETE("/tasks/:task_id", r.tasksHandler.DeleteTask)
 }
 
 func (r *Router) GetEngine() *gin.Engine {

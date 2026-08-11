@@ -3,19 +3,18 @@ package jwt
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"regexp"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-// сам jwt-сервис
 type Service struct {
 	secret     []byte
 	expiration time.Duration
 }
 
-// конструктор jwt-сервиса
 func NewJWTService(secret string, expiration time.Duration) TokenService {
 	return &Service{
 		secret:     []byte(secret),
@@ -23,32 +22,27 @@ func NewJWTService(secret string, expiration time.Duration) TokenService {
 	}
 }
 
-// валидация кастомных полей клеймов
 func (c *Claims) CustomFieldsValidate() error {
-	// проверяем валидность uuid
 	if c.UserId == nil {
-		return fmt.Errorf("Error in customFieldsValidate: User id is empty")
+		return fmt.Errorf("jwt.CustomFieldsValidate: user id is empty")
 	}
 
-	// проверяем, что имя пользователя не пустое
 	if c.UserName == "" {
-		return fmt.Errorf("Error in customFieldsValidate: Invalid user name")
+		return fmt.Errorf("jwt.CustomFieldsValidate: user name is empty")
 	}
 
-	// проверяем валидность почты
 	pattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
 	matched, err := regexp.MatchString(pattern, c.UserEmail)
 	if err != nil {
-		return fmt.Errorf("Error in matchString in customFieldsValidate: %w", err)
+		return fmt.Errorf("jwt.CustomFieldsValidate: match email: %w", err)
 	}
 	if !matched {
-		return fmt.Errorf("Error in customFieldsValidate: User email not looks like email")
+		return fmt.Errorf("jwt.CustomFieldsValidate: email not valid")
 	}
 
 	return nil
 }
 
-// создание токена
 func (j *Service) GenerateToken(userId uuid.UUID, name string, email string) (string, error) {
 	claims := &Claims{
 		UserId:    &userId,
@@ -59,20 +53,18 @@ func (j *Service) GenerateToken(userId uuid.UUID, name string, email string) (st
 		},
 	}
 
-	// валидация кастомных полей
 	if err := claims.CustomFieldsValidate(); err != nil {
-		return "", err
+		return "", fmt.Errorf("jwt.GenerateToken: %w", err)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(j.secret)
 }
 
-// декодировка токена
 func (j *Service) ParseToken(tokenString string, claims *Claims) (*jwt.Token, error) {
 	return jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != jwt.SigningMethodHS256 {
-			return nil, errors.New("invalid method")
+			return nil, errors.New("invalid signing method")
 		}
 		return j.secret, nil
 	})

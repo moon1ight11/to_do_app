@@ -11,7 +11,6 @@ type DataBase struct {
 	MigrationsDir string
 }
 
-// структура клиента редис
 type RedisClient struct {
 	Client *redis.Client
 }

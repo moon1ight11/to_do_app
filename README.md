@@ -31,6 +31,7 @@ Backend-сервис для управления задачами с подде�
 -  **Мониторинг** — `Prometheus` метрики (RPS, latency, error rate, goroutines, memory) + `Grafana` дашборд
 -  **Трейсинг** — `OpenTelemetry` с `Jaeger` (трейсы на всех слоях: HTTP → Service → Repository → Cache)
 -  **Логирование** — структурированное логирование с уровнями INFO/ERROR/FATAL
+-  **Тестирование** — юнит-тесты хендлеров и сервисов с моками, тесты JWT и кэша через miniredis
 -  **Контейнеризация** — `Docker`, `Docker Compose` для локальной разработки
 -  **CI/CD** — `GitHub Actions` для сборки и публикации в `GitHub Container Registry`
 
@@ -41,7 +42,7 @@ Backend-сервис для управления задачами с подде�
 - **Миграции базы данных** - Goose (автоматическое применение при старте)
 - **Аутентификация** - JWT (golang-jwt) с кастомной валидацией claims
 - **Безопасность** - bcrypt (cost factor = 10)
-- **Тестирование** — testify (assert + mock), miniredis для кэша
+- **Тестирование** — testify (assert + require), miniredis для кэша, кастомные моки сервисов и репозиториев
 - **Конфигурация** - Viper (YAML)
 - **Кэширование** - Redis 7 (cache-aside с автоинвалидацией)
 - **Профилирование** — `pprof` (CPU, memory, goroutines)
@@ -132,7 +133,7 @@ Jaeger: http://localhost:16686
 ### Логирование
 - Структурированное логирование с уровнями `INFO`, `ERROR`, `FATAL`
 - Запись логов в файл с автоматическим созданием директории
-- Единый формат: [timestamp] LEVEL: message key=value key2=value2
+- Единый формат: `[timestamp] LEVEL: пакет.Метод: описание key=value`
 - Логирование всех критических операций: вход, регистрация, CRUD операций
 
 ### Миграции базы данных
@@ -158,12 +159,11 @@ Jaeger: http://localhost:16686
 - Валидация всех входных данных (email, временные зоны, UUID)
 
 ## Покрытие тестами
-- Модульные тесты: `JWT`-сервис (генерация, парсинг, валидация), кэш (полный жизненный цикл)
-- Библиотеки: `testify` (assert + require), `miniredis` (эмуляция Redis для тестов)
-- Особенности:
-    - Тесты `JWT` проверяют все сценарии: правильный токен, неправильная подпись, истекший срок, неверный метод шифрования
-    - Тесты кэша используют `miniredis` для изоляции от реального `Redis`
-    - Полное покрытие всех методов кэша: Set, Get (успех + cache miss + expired), Delete
+- **Хендлеры:** auth (SignUp, SignIn), users (GetUser, UpdateUser, DeleteUser), settings (GetSettings, UpdateSettings), tasks (CreateTask, GetTasks, GetTaskById, DeleteTask)
+- **Сервисы:** users (AddUser, CheckAndGetUser, GetUser, DeleteUser, валидация UpdateUser), tasks (CreateTask, GetAllTasks, GetOneTask, валидация времени), settings (GetSettings, валидация таймзоны)
+- **JWT:** генерация, парсинг, неправильная подпись, истекший срок, неверный метод шифрования
+- **Кэш:** полный жизненный цикл (Set, Get, Delete), cache miss, expired
+- **Библиотеки:** testify (assert + require), miniredis (эмуляция Redis), кастомные моки сервисов и репозиториев, noop-трейсер OpenTelemetry
 
 ## Мониторинг
 Сервис экспортирует метрики для Prometheus на эндпоинте /metrics

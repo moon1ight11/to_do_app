@@ -1,20 +1,20 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"todoapp/internal/api/jwt"
 	"todoapp/pkg/logger"
 )
 
-// мидлвар аутентификации
-func Auth(jwtService jwt.TokenService, logger logger.LoggerInterface) gin.HandlerFunc {
+func Auth(jwtService jwt.TokenService, l logger.LoggerInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer c.Next()
 
 		value, err := c.Cookie("token")
 		if err != nil {
-			logger.Error("Error in get value from cookie in AuthMiddle:", "error", err)
+			l.Error("middleware.Auth: get cookie", "error", err)
 			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			c.Abort()
 			return
@@ -24,15 +24,15 @@ func Auth(jwtService jwt.TokenService, logger logger.LoggerInterface) gin.Handle
 
 		token, err := jwtService.ParseToken(value, &claims)
 		if err != nil {
-			logger.Error("Error in parse token in AuthMiddle:", "error", err)
+			l.Error("middleware.Auth: parse token", "error", err)
 			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			c.Abort()
 			return
 		}
 
 		if !token.Valid {
-			logger.Error("Error in AuthMiddle: Token not valid")
-			c.JSON(http.StatusForbidden, gin.H{"error": "Token not valid"})
+			l.Error("middleware.Auth: token not valid")
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			c.Abort()
 			return
 		}

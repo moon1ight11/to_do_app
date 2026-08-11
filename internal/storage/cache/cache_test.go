@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-// создаем тестовый кэш с миниредис
 func setupTestCache(t *testing.T) (*CacheService, *miniredis.Miniredis) {
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
@@ -32,7 +31,6 @@ func setupTestCache(t *testing.T) (*CacheService, *miniredis.Miniredis) {
 	return cache, mr
 }
 
-// установка значения в кэш
 func TestCacheService_Set_Struct(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -51,7 +49,6 @@ func TestCacheService_Set_Struct(t *testing.T) {
 	assert.True(t, exists)
 }
 
-// получение данных из кэша
 func TestCacheService_Get_Success(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -75,7 +72,6 @@ func TestCacheService_Get_Success(t *testing.T) {
 	assert.Equal(t, expectedData["userEmail"], result["userEmail"])
 }
 
-// получение просроченного кэша
 func TestCacheService_Get_Expired(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -102,10 +98,9 @@ func TestCacheService_Get_Expired(t *testing.T) {
 
 	err = cache.Get(ctx, key, &result)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cache miss")
+	assert.Contains(t, err.Error(), "cache.Get: miss")
 }
 
-// получение данных по несуществующему ключу
 func TestCacheService_Get_CacheMiss(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -116,10 +111,9 @@ func TestCacheService_Get_CacheMiss(t *testing.T) {
 	err := cache.Get(ctx, "KEYNOTFOUND", &result)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cache miss")
+	assert.Contains(t, err.Error(), "cache.Get: miss")
 }
 
-// удаление записи
 func TestCacheService_Delete(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -143,7 +137,6 @@ func TestCacheService_Delete(t *testing.T) {
 	assert.False(t, exists)
 }
 
-// удаление записи с неправильным ключом
 func TestCacheService_Delete_NonExistentKey(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -155,7 +148,6 @@ func TestCacheService_Delete_NonExistentKey(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// полный жизненный цикл кэша
 func TestCacheService_FullLifecycle(t *testing.T) {
 	cache, mr := setupTestCache(t)
 	defer mr.Close()
@@ -181,5 +173,5 @@ func TestCacheService_FullLifecycle(t *testing.T) {
 
 	err = cache.Get(ctx, key, &result)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cache miss")
+	assert.Contains(t, err.Error(), "cache.Get: miss")
 }
