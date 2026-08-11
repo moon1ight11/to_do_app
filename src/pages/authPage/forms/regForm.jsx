@@ -9,113 +9,74 @@ const RegForm = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    // отправка нового юзера на сервер
     const sendNewUser = async (userData) => {
         try {
-            const response = await fetch('https://todoappmoon.ru/v1/auth/sign-up', {
+            const response = await fetch('http://localhost:8080/v1/auth/sign-up', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(userData),
                 credentials: "include"
             });
 
             if (response.ok) {
-                const result = await response.json();
-                console.log('Успешная регистрация:', result);
-                message.success('Регистрация прошла успешно!');
+                message.success('Account created!');
                 setError('');
-
-                setTimeout(() => {
-                    navigate('/');
-                }, 1000);
-
-                return result;
+                setTimeout(() => navigate('/'), 600);
+                return await response.json();
             } else {
                 const errorData = await response.json();
-                console.error('Ошибка сервера:', response.status, errorData);
-
-                const errorMessage = errorData.error || response.statusText;
-                setError(errorMessage);
-                message.error(`Ошибка регистрации: ${errorMessage}`);
-
-                throw new Error(errorMessage);
+                const msg = errorData.error || 'Registration failed';
+                setError(msg);
+                message.error(msg);
+                throw new Error(msg);
             }
         } catch (error) {
-            console.error('Ошибка:', error);
-            const errorMsg = error.message || 'Произошла ошибка при регистрации';
-            setError(errorMsg);
-            message.error(errorMsg);
+            const msg = error.message || 'Network error';
+            setError(msg);
+            message.error(msg);
             throw error;
         }
     };
 
-    // обработка отправки формы
     const onFinish = async (values) => {
         setLoading(true);
         setError('');
         try {
-            const newUser = {
+            await sendNewUser({
                 user_name: values.userName,
                 user_pass: values.userPass,
                 user_email: values.userEmail
-            };
-
-            await sendNewUser(newUser);
+            });
             form.resetFields();
-
         } catch (error) {
         } finally {
             setLoading(false);
         }
     };
 
-    const onFinishFailed = (errorInfo) => {
-        console.log('Failed:', errorInfo);
-        message.warning('Пожалуйста, заполните все поля правильно');
-    };
-
     return (
         <div className={classes.formContainer}>
-            {error && (
-                <div className={classes.errorMessage} style={{
-                    color: 'red',
-                    textAlign: 'center',
-                    marginBottom: '16px',
-                    padding: '8px',
-                    backgroundColor: '#fff2f0',
-                    border: '1px solid #ffccc7',
-                    borderRadius: '4px'
-                }}>
-                    {error}
-                </div>
-            )}
+            <h2>Create account</h2>
+            <p>Start managing your tasks</p>
+
+            {error && <div className={classes.errorMessage}>{error}</div>}
+
             <Form
                 form={form}
                 name="register"
-                labelCol={{ span: 10 }}
-                wrapperCol={{ span: 17 }}
-                style={{ maxWidth: 600 }}
+                labelCol={{ span: 24 }}
+                wrapperCol={{ span: 24 }}
                 onFinish={onFinish}
-                onFinishFailed={onFinishFailed}
                 autoComplete="off"
                 validateTrigger="onSubmit"
             >
                 <Form.Item
                     label="Name"
                     name="userName"
-
                     validateTrigger="onSubmit"
                     rules={[
-                        {
-                            required: true,
-                            message: 'Please, enter your name!'
-                        },
-                        {
-                            min: 3,
-                            message: 'The name must be at least 3 characters long!'
-                        }
+                        { required: true, message: 'Please enter your name' },
+                        { min: 3, message: 'Name must be at least 3 characters' }
                     ]}
                 >
                     <Input />
@@ -126,14 +87,8 @@ const RegForm = () => {
                     name="userEmail"
                     validateTrigger="onSubmit"
                     rules={[
-                        {
-                            required: true,
-                            message: 'Please, enter your email!'
-                        },
-                        {
-                            type: 'email',
-                            message: 'Please enter a valid email address!'
-                        }
+                        { required: true, message: 'Please enter your email' },
+                        { type: 'email', message: 'Please enter a valid email' }
                     ]}
                 >
                     <Input />
@@ -144,28 +99,20 @@ const RegForm = () => {
                     name="userPass"
                     validateTrigger="onSubmit"
                     rules={[
-                        {
-                            required: true,
-                            message: 'Please, enter your password!'
-                        },
-                        {
-                            min: 6,
-                            message: 'The password must be at least 6 characters long!'
-                        }
+                        { required: true, message: 'Please enter your password' },
+                        { min: 6, message: 'Password must be at least 6 characters' }
                     ]}
                 >
                     <Input.Password />
                 </Form.Item>
+
                 <Form.Item
                     label="Confirm Password"
                     name="confirmPassword"
                     dependencies={['userPass']}
                     validateTrigger="onSubmit"
                     rules={[
-                        {
-                            required: true,
-                            message: 'Please confirm your password!',
-                        },
+                        { required: true, message: 'Please confirm your password' },
                         ({ getFieldValue }) => ({
                             validator(_, value) {
                                 if (!value || getFieldValue('userPass') === value) {
@@ -179,14 +126,14 @@ const RegForm = () => {
                     <Input.Password />
                 </Form.Item>
 
-                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                <Form.Item>
                     <Button
                         type="primary"
                         htmlType="submit"
                         loading={loading}
                         className={classes.submitButton}
                     >
-                        Sign UP!
+                        Create Account
                     </Button>
                 </Form.Item>
             </Form>
