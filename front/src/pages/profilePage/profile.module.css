@@ -1,0 +1,370 @@
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.userProfile {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: #0a0a14;
+  position: relative;
+  overflow: hidden;
+}
+
+.userProfile::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(118, 75, 162, 0.12) 0%, transparent 70%);
+  top: -150px;
+  left: -150px;
+  animation: morphBg 18s ease-in-out infinite;
+}
+
+.userProfile::after {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+  bottom: -100px;
+  right: -100px;
+  animation: morphBg 22s ease-in-out infinite reverse;
+}
+
+@keyframes morphBg {
+
+  0%,
+  100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+  }
+
+  50% {
+    border-radius: 50% 50% 40% 60% / 40% 60% 50% 60%;
+  }
+
+  75% {
+    border-radius: 40% 50% 60% 40% / 60% 40% 60% 40%;
+  }
+}
+
+.profileContainer {
+  background: rgba(18, 18, 30, 0.8);
+  backdrop-filter: blur(24px);
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  width: 100%;
+  max-width: 460px;
+  position: relative;
+  z-index: 1;
+  padding: 40px 36px 32px;
+}
+
+/* Header */
+.profileHeader {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.avatarWrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.avatarRing {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(from 0deg, #667eea, #764ba2, #667eea);
+  animation: ringRotate 4s linear infinite;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+}
+
+@keyframes ringRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #9b59b6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 0 32px rgba(102, 126, 234, 0.3);
+  letter-spacing: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+/* Timeline info */
+.timeline {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 28px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg,
+      rgba(102, 126, 234, 0.3),
+      rgba(155, 89, 182, 0.3),
+      rgba(52, 211, 153, 0.3),
+      rgba(96, 165, 250, 0.3),
+      rgba(251, 191, 36, 0.3));
+  border-radius: 1px;
+}
+
+.timelineItem {
+  position: relative;
+  padding: 12px 0 12px 20px;
+  transition: transform 0.3s ease;
+}
+
+.timelineItem:hover {
+  transform: translateX(4px);
+}
+
+.timelineDot {
+  position: absolute;
+  left: -23px;
+  top: 18px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.timelineItem:hover .timelineDot {
+  transform: scale(1.6);
+}
+
+.timelineDot.name {
+  background: #667eea;
+  box-shadow: 0 0 16px rgba(102, 126, 234, 0.6);
+}
+
+.timelineDot.email {
+  background: #9b59b6;
+  box-shadow: 0 0 16px rgba(155, 89, 182, 0.6);
+}
+
+.timelineDot.pass {
+  background: #34d399;
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.6);
+}
+
+.timelineDot.tz {
+  background: #60a5fa;
+  box-shadow: 0 0 16px rgba(96, 165, 250, 0.6);
+}
+
+.timelineLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 2px;
+}
+
+.timelineValue {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  transition: color 0.3s ease;
+}
+
+.timelineItem:hover .timelineValue {
+  color: #ffffff;
+}
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.btn {
+  flex: 1;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 0.3px;
+}
+
+.btnPrimary {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.btnPrimary:hover {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.btnDanger {
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.btnDanger:hover {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(248, 113, 113, 0.15);
+}
+
+.btnBack {
+  width: 100%;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: 500;
+}
+
+.btnBack:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.formLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.formInput,
+.formSelect {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  font-size: 15px;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.formInput::placeholder {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.formInput:focus,
+.formSelect:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(102, 126, 234, 0.06);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.06);
+}
+
+.formSelect option {
+  background: #12121e;
+  color: white;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* States */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #0a0a14;
+  color: white;
+  gap: 16px;
+}
+
+.loadingText,
+.errorText {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.retryButton {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.retryButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}

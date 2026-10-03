@@ -1,0 +1,29 @@
+environment: "development"
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+database:
+  host: "localhost"
+  port: 15432
+  name: "todoapp"
+  user: "fedor"
+  password: "fedor_pass"
+  migrationsDir: "./internal/storage/repos/migrations"
+
+jwt:
+  secret: "1129qwerty!2911"
+  expiration: "24h"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: "redis_pass"
+
+logger:
+  file_path: "./logs/ToDoApp.log"
+
+telemetry:
+  endpoint: "localhost:4317"
+  service_name: "ToDoApp"
